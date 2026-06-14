@@ -14,7 +14,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Pause/resume token auto-refresh based on app focus (native & web via AppState).
+// Pause/resume token auto-refresh based on app focus.
 AppState.addEventListener('change', (state) => {
   if (state === 'active') {
     supabase.auth.startAutoRefresh();
