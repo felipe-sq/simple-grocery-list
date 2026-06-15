@@ -1,19 +1,17 @@
+import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { supabase } from '@/lib/supabase';
-
 export default function HomeScreen() {
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-  }
-
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Your Grocery Lists</Text>
       <Text style={styles.subtext}>Stores and lists coming in the next tickets.</Text>
-      <Pressable style={styles.signOutButton} onPress={handleSignOut}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </Pressable>
+
+      <Link href="/(app)/settings" asChild>
+        <Pressable style={styles.settingsButton}>
+          <Text style={styles.settingsText}>Settings</Text>
+        </Pressable>
+      </Link>
     </View>
   );
 }
@@ -37,15 +35,16 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     textAlign: 'center',
   },
-  signOutButton: {
+  settingsButton: {
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#ef4444',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
   },
-  signOutText: {
-    color: '#fff',
-    fontWeight: '600',
+  settingsText: {
+    color: '#374151',
+    fontWeight: '500',
     fontSize: 15,
   },
 });

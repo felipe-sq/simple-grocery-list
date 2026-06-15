@@ -4,6 +4,7 @@ export default function AppLayout() {
   return (
     <Stack>
       <Stack.Screen name="index" options={{ title: 'Grocery List' }} />
+      <Stack.Screen name="settings" options={{ title: 'Settings' }} />
     </Stack>
   );
 }
