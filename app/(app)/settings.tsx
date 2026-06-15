@@ -2,6 +2,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useHousehold } from '@/hooks/useHousehold';
@@ -10,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 export default function SettingsScreen() {
   const { session } = useAuth();
   const { householdId } = useHousehold();
+  const router = useRouter();
   const [householdName, setHouseholdName] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
 
@@ -83,6 +85,19 @@ export default function SettingsScreen() {
           <Text style={styles.buttonText}>
             {generating ? 'Generating…' : 'Generate Invite Link'}
           </Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>STORES & AISLES</Text>
+        <Text style={styles.description}>
+          Configure your stores and aisles for your grocery lists.
+        </Text>
+        <Pressable
+          style={styles.button}
+          onPress={() => router.push('/(app)/settings/stores')}
+        >
+          <Text style={styles.buttonText}>Manage Stores & Aisles</Text>
         </Pressable>
       </View>
 
