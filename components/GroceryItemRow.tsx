@@ -1,12 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { GroceryItemWithAisle } from '@/types';
 
 type Props = {
   item: GroceryItemWithAisle;
+  onToggle: () => void;
 };
 
-export function GroceryItemRow({ item }: Props) {
+export function GroceryItemRow({ item, onToggle }: Props) {
   const quantityLabel =
     item.quantity !== null && item.unit
       ? `${item.quantity} ${item.unit}`
@@ -18,15 +19,27 @@ export function GroceryItemRow({ item }: Props) {
 
   return (
     <View style={[styles.row, item.checked && styles.rowChecked]}>
-      <View style={[styles.circle, item.checked && styles.circleChecked]}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.circle,
+          item.checked && styles.circleChecked,
+          pressed && styles.circlePressed,
+        ]}
+        onPress={onToggle}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: item.checked }}
+        accessibilityLabel={`${item.name}, ${item.checked ? 'checked' : 'unchecked'}`}
+        hitSlop={8}
+      >
         {item.checked && <View style={styles.checkFill} />}
-      </View>
+      </Pressable>
       <Text
         style={[styles.name, item.checked && styles.nameChecked]}
         numberOfLines={2}
       >
         {label}
       </Text>
+      {item.pending_sync && <Text style={styles.pendingIcon}>⚠</Text>}
     </View>
   );
 }
@@ -57,6 +70,9 @@ const styles = StyleSheet.create({
   circleChecked: {
     borderColor: '#2563eb',
   },
+  circlePressed: {
+    opacity: 0.6,
+  },
   checkFill: {
     width: 12,
     height: 12,
@@ -71,5 +87,10 @@ const styles = StyleSheet.create({
   nameChecked: {
     textDecorationLine: 'line-through',
     color: '#374151',
+  },
+  pendingIcon: {
+    fontSize: 14,
+    color: '#d97706',
+    marginLeft: 8,
   },
 });

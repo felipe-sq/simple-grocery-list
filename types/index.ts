@@ -33,9 +33,11 @@ export type GroceryItem = {
   updated_at: string;
 };
 
-// GroceryItem with the joined aisle row (id, name, sort_order only)
+// GroceryItem with the joined aisle row (id, name, sort_order only).
+// pending_sync is client-only: set when a mutation is queued offline.
 export type GroceryItemWithAisle = GroceryItem & {
   aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+  pending_sync?: boolean;
 };
 
 export type AisleGroup = {

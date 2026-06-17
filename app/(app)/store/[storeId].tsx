@@ -42,7 +42,7 @@ function buildAisleGroups(items: GroceryItemWithAisle[]): AisleGroup[] {
 export default function StoreScreen() {
   const { storeId } = useLocalSearchParams<{ storeId: string }>();
   const { householdId } = useHousehold();
-  const { items, loading } = useGroceryItems(storeId, householdId);
+  const { items, loading, toggleItem } = useGroceryItems(storeId, householdId);
 
   const aisleGroups = useMemo(() => buildAisleGroups(items), [items]);
 
@@ -126,6 +126,7 @@ export default function StoreScreen() {
             group={group}
             isCollapsed={isCollapsed(group)}
             onToggle={() => handleToggle(group)}
+            onToggleItem={toggleItem}
           />
         ))}
 

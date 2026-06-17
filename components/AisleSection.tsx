@@ -7,9 +7,10 @@ type Props = {
   group: AisleGroup;
   isCollapsed: boolean;
   onToggle: () => void;
+  onToggleItem: (itemId: string) => void;
 };
 
-export function AisleSection({ group, isCollapsed, onToggle }: Props) {
+export function AisleSection({ group, isCollapsed, onToggle, onToggleItem }: Props) {
   const { aisle, items } = group;
   const total = items.length;
   const checkedCount = items.filter((i) => i.checked).length;
@@ -30,7 +31,13 @@ export function AisleSection({ group, isCollapsed, onToggle }: Props) {
       </Pressable>
 
       {!isCollapsed &&
-        items.map((item) => <GroceryItemRow key={item.id} item={item} />)}
+        items.map((item) => (
+          <GroceryItemRow
+            key={item.id}
+            item={item}
+            onToggle={() => onToggleItem(item.id)}
+          />
+        ))}
     </View>
   );
 }
