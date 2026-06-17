@@ -83,3 +83,25 @@ export type SuggestionResult = {
   aisle_id: string;
   aisle_name: string;
 };
+
+export type StapleItem = {
+  id: string;
+  household_id: string;
+  name: string;
+  default_store_id: string | null;
+  default_aisle_id: string | null;
+  default_qty: number | null;
+  default_unit: string | null;
+  sort_order: number;
+  created_at: string;
+};
+
+export type StapleItemWithDetails = StapleItem & {
+  store: Pick<Store, 'id' | 'name' | 'sort_order'> | null;
+  aisle: Pick<Aisle, 'id' | 'name'> | null;
+};
+
+export type StapleGroup = {
+  store: Pick<Store, 'id' | 'name' | 'sort_order'> | null;
+  items: StapleItemWithDetails[];
+};
