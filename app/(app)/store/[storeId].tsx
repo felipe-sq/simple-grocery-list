@@ -1,48 +1,217 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+
+import { AisleSection } from '@/components/AisleSection';
+import { useGroceryItems } from '@/hooks/useGroceryItems';
+import { useHousehold } from '@/hooks/useHousehold';
+import type { AisleGroup, GroceryItemWithAisle } from '@/types';
+
+function buildAisleGroups(items: GroceryItemWithAisle[]): AisleGroup[] {
+  const map = new Map<string, AisleGroup>();
+
+  for (const item of items) {
+    if (!map.has(item.aisle_id)) {
+      map.set(item.aisle_id, { aisle: item.aisle, items: [] });
+    }
+    map.get(item.aisle_id)!.items.push(item);
+  }
+
+  const groups = Array.from(map.values()).sort(
+    (a, b) => a.aisle.sort_order - b.aisle.sort_order,
+  );
+
+  for (const group of groups) {
+    const unchecked = group.items
+      .filter((i) => !i.checked)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    const checked = group.items
+      .filter((i) => i.checked)
+      .sort((a, b) => {
+        if (!a.checked_at) return 1;
+        if (!b.checked_at) return -1;
+        return a.checked_at.localeCompare(b.checked_at);
+      });
+    group.items = [...unchecked, ...checked];
+  }
+
+  return groups;
+}
 
 export default function StoreScreen() {
   const { storeId } = useLocalSearchParams<{ storeId: string }>();
+  const { householdId } = useHousehold();
+  const { items, loading } = useGroceryItems(storeId, householdId);
+
+  const aisleGroups = useMemo(() => buildAisleGroups(items), [items]);
+
+  // Track aisles the user has manually expanded after auto-collapse.
+  const [manuallyExpanded, setManuallyExpanded] = useState<Set<string>>(new Set());
+
+  // When an aisle transitions away from "all checked," remove it from the
+  // manual expansion set so it auto-collapses again next time.
+  useEffect(() => {
+    const fullyCheckedIds = new Set(
+      aisleGroups
+        .filter((g) => g.items.length > 0 && g.items.every((i) => i.checked))
+        .map((g) => g.aisle.id),
+    );
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setManuallyExpanded((prev) => {
+        const next = new Set(prev);
+        for (const id of next) {
+          if (!fullyCheckedIds.has(id)) next.delete(id);
+        }
+        return next;
+      });
+    });
+    return () => { active = false; };
+  }, [aisleGroups]);
+
+  const insets = useSafeAreaInsets();
+
+  const allChecked =
+    items.length > 0 && items.every((i) => i.checked);
+
+  function isCollapsed(group: AisleGroup): boolean {
+    const fullyChecked =
+      group.items.length > 0 && group.items.every((i) => i.checked);
+    return fullyChecked && !manuallyExpanded.has(group.aisle.id);
+  }
+
+  function handleToggle(group: AisleGroup) {
+    const collapsed = isCollapsed(group);
+    setManuallyExpanded((prev) => {
+      const next = new Set(prev);
+      if (collapsed) {
+        next.add(group.aisle.id);
+      } else {
+        next.delete(group.aisle.id);
+      }
+      return next;
+    });
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  // EC5-6: empty state
+  if (items.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.emptyEmoji}>🛒</Text>
+        <Text style={styles.emptyHeading}>Your list is empty.</Text>
+        <Text style={styles.emptySub}>Add items to get started.</Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.emoji}>🛒</Text>
-      <Text style={styles.heading}>Coming soon</Text>
-      <Text style={styles.sub}>Grocery list for this store will appear here.</Text>
-      <Text style={styles.storeId} numberOfLines={1}>
-        Store ID: {storeId}
-      </Text>
+    <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {aisleGroups.map((group) => (
+          <AisleSection
+            key={group.aisle.id}
+            group={group}
+            isCollapsed={isCollapsed(group)}
+            onToggle={() => handleToggle(group)}
+          />
+        ))}
+
+        {/* EC4-5: all items checked */}
+        {allChecked && (
+          <View style={styles.allCheckedBanner}>
+            <Text style={styles.allCheckedText}>Everything's in the cart 🛒</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* End Trip button — placeholder; interaction wired in T-013 */}
+      <View style={styles.footer}>
+        <View style={[styles.endTripBtn, allChecked && styles.endTripBtnPulse]}>
+          <Text style={styles.endTripLabel}>End Trip</Text>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingVertical: 8,
+  },
+  centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
+    padding: 32,
+    backgroundColor: '#f9fafb',
   },
-  emoji: {
+  emptyEmoji: {
     fontSize: 48,
     marginBottom: 16,
   },
-  heading: {
-    fontSize: 20,
-    fontWeight: '700',
+  emptyHeading: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#111827',
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  sub: {
+  emptySub: {
     fontSize: 14,
     color: '#6b7280',
     textAlign: 'center',
-    marginBottom: 20,
   },
-  storeId: {
-    fontSize: 11,
-    color: '#d1d5db',
-    fontFamily: 'monospace',
+  allCheckedBanner: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 16,
+    backgroundColor: '#eff6ff',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  allCheckedText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1d4ed8',
+  },
+  footer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#e5e7eb',
+    backgroundColor: '#fff',
+  },
+  endTripBtn: {
+    backgroundColor: '#2563eb',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  endTripBtnPulse: {
+    backgroundColor: '#1d4ed8',
+  },
+  endTripLabel: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

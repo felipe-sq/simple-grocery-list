@@ -13,3 +13,32 @@ export type Aisle = {
   name: string;
   sort_order: number;
 };
+
+export type GroceryItem = {
+  id: string;
+  household_id: string;
+  store_id: string;
+  aisle_id: string;
+  name: string;
+  quantity: number | null;
+  unit: string | null;
+  notes: string | null;
+  checked: boolean;
+  checked_at: string | null;
+  checked_by: string | null;
+  sort_order: number;
+  source: 'manual' | 'staples' | 'suggestion' | 'barcode' | 'voice';
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+// GroceryItem with the joined aisle row (id, name, sort_order only)
+export type GroceryItemWithAisle = GroceryItem & {
+  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+};
+
+export type AisleGroup = {
+  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+  items: GroceryItemWithAisle[];
+};
