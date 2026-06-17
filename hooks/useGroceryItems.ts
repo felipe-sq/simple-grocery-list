@@ -3,7 +3,14 @@ import { LayoutAnimation, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { enqueue, flush } from '@/lib/offlineQueue';
-import type { GroceryItemWithAisle } from '@/types';
+import type { AddItemInput, GroceryItemWithAisle } from '@/types';
+
+function generateId(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
 
 export function useGroceryItems(
   storeId: string,
@@ -12,6 +19,7 @@ export function useGroceryItems(
   items: GroceryItemWithAisle[];
   loading: boolean;
   toggleItem: (itemId: string) => Promise<void>;
+  addItem: (data: AddItemInput) => Promise<{ error: string | null }>;
 } {
   const [items, setItems] = useState<GroceryItemWithAisle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +55,20 @@ export function useGroceryItems(
           return true;
         }
         return false;
+      }
+      if (mutation.type === 'add_item') {
+        const { error: itemErr } = await supabase
+          .from('grocery_items')
+          .insert(mutation.groceryItem);
+        if (itemErr) return false;
+        // History failure is non-fatal — item is already saved
+        await supabase.from('item_history').insert(mutation.historyItem);
+        setPendingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(mutation.itemId);
+          return next;
+        });
+        return true;
       }
       return false;
     });
@@ -173,10 +195,75 @@ export function useGroceryItems(
     }
   }, []);
 
+  const addItem = useCallback(async (data: AddItemInput): Promise<{ error: string | null }> => {
+    const currentHouseholdId = householdIdRef.current;
+    if (!currentHouseholdId) return { error: 'Not authenticated' };
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user.id;
+    if (!userId) return { error: 'Not authenticated' };
+
+    const itemId = generateId();
+    const now = new Date().toISOString();
+    const aisleItems = itemsRef.current.filter((i) => i.aisle_id === data.aisleId);
+    const sortOrder =
+      aisleItems.length > 0 ? Math.max(...aisleItems.map((i) => i.sort_order)) + 10 : 0;
+
+    const groceryItem = {
+      id: itemId,
+      household_id: currentHouseholdId,
+      store_id: data.storeId,
+      aisle_id: data.aisleId,
+      name: data.name,
+      quantity: data.quantity,
+      unit: data.unit,
+      notes: data.notes,
+      sort_order: sortOrder,
+      source: 'manual' as const,
+      created_by: userId,
+      created_at: now,
+    };
+
+    const historyItem = {
+      household_id: currentHouseholdId,
+      name: data.name.trim().toLowerCase(),
+      store_id: data.storeId,
+      aisle_id: data.aisleId,
+      added_by: userId,
+      purchased_at: now,
+    };
+
+    if (!isConnectedRef.current) {
+      // EC1-6: offline — optimistic add + enqueue
+      const optimistic: GroceryItemWithAisle = {
+        ...groceryItem,
+        updated_at: now,
+        checked: false,
+        checked_at: null,
+        checked_by: null,
+        aisle: data.aisle,
+        pending_sync: true,
+      };
+      if (data.storeId === storeId) {
+        setItems((prev) => [...prev, optimistic]);
+        setPendingIds((prev) => new Set([...prev, itemId]));
+      }
+      await enqueue({ type: 'add_item', householdId: currentHouseholdId, itemId, groceryItem, historyItem });
+      return { error: null };
+    }
+
+    const { error: itemErr } = await supabase.from('grocery_items').insert(groceryItem);
+    if (itemErr) return { error: itemErr.message };
+
+    // History failure is non-fatal
+    await supabase.from('item_history').insert(historyItem);
+    return { error: null };
+  }, [storeId]);
+
   const itemsWithPending = useMemo(
     () => items.map((i) => ({ ...i, pending_sync: pendingIds.has(i.id) })),
     [items, pendingIds],
   );
 
-  return { items: itemsWithPending, loading, toggleItem };
+  return { items: itemsWithPending, loading, toggleItem, addItem };
 }

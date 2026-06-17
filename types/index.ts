@@ -44,3 +44,32 @@ export type AisleGroup = {
   aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
   items: GroceryItemWithAisle[];
 };
+
+export type ItemHistory = {
+  id: string;
+  household_id: string;
+  name: string;
+  store_id: string;
+  aisle_id: string;
+  barcode: string | null;
+  purchased_at: string;
+  added_by: string;
+};
+
+export type AddItemInput = {
+  name: string;
+  storeId: string;
+  aisleId: string;
+  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+  quantity: number | null;
+  unit: string | null;
+  notes: string | null;
+};
+
+export type SuggestionResult = {
+  name: string;
+  store_id: string;
+  store_name: string;
+  aisle_id: string;
+  aisle_name: string;
+};

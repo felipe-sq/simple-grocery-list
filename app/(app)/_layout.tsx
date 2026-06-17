@@ -1,3 +1,4 @@
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { usePathname, useRouter } from 'expo-router';
 import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -12,6 +13,7 @@ export default function AppLayout() {
   const router = useRouter();
 
   return (
+    <BottomSheetModalProvider>
     <Tabs>
       <View style={styles.content}>
         {loading && (
@@ -72,6 +74,7 @@ export default function AppLayout() {
         </Pressable>
       </TabList>
     </Tabs>
+    </BottomSheetModalProvider>
   );
 }
 

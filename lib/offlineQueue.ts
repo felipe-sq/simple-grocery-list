@@ -11,7 +11,35 @@ export type ToggleItemMutation = {
   checked_by: string | null;
 };
 
-export type OfflineMutation = ToggleItemMutation;
+export type AddItemMutation = {
+  type: 'add_item';
+  householdId: string;
+  itemId: string;
+  groceryItem: {
+    id: string;
+    household_id: string;
+    store_id: string;
+    aisle_id: string;
+    name: string;
+    quantity: number | null;
+    unit: string | null;
+    notes: string | null;
+    sort_order: number;
+    source: 'manual';
+    created_by: string;
+    created_at: string;
+  };
+  historyItem: {
+    household_id: string;
+    name: string;
+    store_id: string;
+    aisle_id: string;
+    added_by: string;
+    purchased_at: string;
+  };
+};
+
+export type OfflineMutation = ToggleItemMutation | AddItemMutation;
 
 async function getQueue(): Promise<OfflineMutation[]> {
   const raw = await AsyncStorage.getItem(QUEUE_KEY);

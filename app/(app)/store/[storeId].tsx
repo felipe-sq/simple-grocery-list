@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 
+import { AddItemSheet } from '@/components/AddItemSheet';
 import { AisleSection } from '@/components/AisleSection';
 import { useGroceryItems } from '@/hooks/useGroceryItems';
 import { useHousehold } from '@/hooks/useHousehold';
+import { useStores } from '@/hooks/useStores';
 import type { AisleGroup, GroceryItemWithAisle } from '@/types';
 
 function buildAisleGroups(items: GroceryItemWithAisle[]): AisleGroup[] {
@@ -42,15 +44,15 @@ function buildAisleGroups(items: GroceryItemWithAisle[]): AisleGroup[] {
 export default function StoreScreen() {
   const { storeId } = useLocalSearchParams<{ storeId: string }>();
   const { householdId } = useHousehold();
-  const { items, loading, toggleItem } = useGroceryItems(storeId, householdId);
+  const { stores } = useStores();
+  const { items, loading, toggleItem, addItem } = useGroceryItems(storeId, householdId);
+
+  const [sheetVisible, setSheetVisible] = useState(false);
 
   const aisleGroups = useMemo(() => buildAisleGroups(items), [items]);
 
-  // Track aisles the user has manually expanded after auto-collapse.
   const [manuallyExpanded, setManuallyExpanded] = useState<Set<string>>(new Set());
 
-  // When an aisle transitions away from "all checked," remove it from the
-  // manual expansion set so it auto-collapses again next time.
   useEffect(() => {
     const fullyCheckedIds = new Set(
       aisleGroups
@@ -73,20 +75,18 @@ export default function StoreScreen() {
 
   const insets = useSafeAreaInsets();
 
-  const allChecked =
-    items.length > 0 && items.every((i) => i.checked);
+  const currentStore = stores.find((s) => s.id === storeId);
+  const allChecked = items.length > 0 && items.every((i) => i.checked);
 
   function isCollapsed(group: AisleGroup): boolean {
-    const fullyChecked =
-      group.items.length > 0 && group.items.every((i) => i.checked);
+    const fullyChecked = group.items.length > 0 && group.items.every((i) => i.checked);
     return fullyChecked && !manuallyExpanded.has(group.aisle.id);
   }
 
   function handleToggle(group: AisleGroup) {
-    const collapsed = isCollapsed(group);
     setManuallyExpanded((prev) => {
       const next = new Set(prev);
-      if (collapsed) {
+      if (isCollapsed(group)) {
         next.add(group.aisle.id);
       } else {
         next.delete(group.aisle.id);
@@ -103,62 +103,76 @@ export default function StoreScreen() {
     );
   }
 
-  // EC5-6: empty state
-  if (items.length === 0) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.emptyEmoji}>🛒</Text>
-        <Text style={styles.emptyHeading}>Your list is empty.</Text>
-        <Text style={styles.emptySub}>Add items to get started.</Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {aisleGroups.map((group) => (
-          <AisleSection
-            key={group.aisle.id}
-            group={group}
-            isCollapsed={isCollapsed(group)}
-            onToggle={() => handleToggle(group)}
-            onToggleItem={toggleItem}
-          />
-        ))}
+    <>
+      <Stack.Screen
+        options={{
+          title: currentStore?.name ?? '',
+          headerRight: () => (
+            <Pressable
+              onPress={() => setSheetVisible(true)}
+              hitSlop={12}
+              accessibilityLabel="Add item"
+              accessibilityRole="button"
+            >
+              <Text style={styles.addBtn}>＋</Text>
+            </Pressable>
+          ),
+        }}
+      />
 
-        {/* EC4-5: all items checked */}
-        {allChecked && (
-          <View style={styles.allCheckedBanner}>
-            <Text style={styles.allCheckedText}>Everything's in the cart 🛒</Text>
-          </View>
-        )}
-      </ScrollView>
-
-      {/* End Trip button — placeholder; interaction wired in T-013 */}
-      <View style={styles.footer}>
-        <View style={[styles.endTripBtn, allChecked && styles.endTripBtnPulse]}>
-          <Text style={styles.endTripLabel}>End Trip</Text>
+      {items.length === 0 ? (
+        <View style={styles.centered}>
+          <Text style={styles.emptyEmoji}>🛒</Text>
+          <Text style={styles.emptyHeading}>Your list is empty.</Text>
+          <Text style={styles.emptySub}>Add items to get started.</Text>
         </View>
-      </View>
-    </View>
+      ) : (
+        <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+            {aisleGroups.map((group) => (
+              <AisleSection
+                key={group.aisle.id}
+                group={group}
+                isCollapsed={isCollapsed(group)}
+                onToggle={() => handleToggle(group)}
+                onToggleItem={toggleItem}
+              />
+            ))}
+
+            {allChecked && (
+              <View style={styles.allCheckedBanner}>
+                <Text style={styles.allCheckedText}>Everything's in the cart 🛒</Text>
+              </View>
+            )}
+          </ScrollView>
+
+          <View style={styles.footer}>
+            <View style={[styles.endTripBtn, allChecked && styles.endTripBtnPulse]}>
+              <Text style={styles.endTripLabel}>End Trip</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {currentStore !== undefined && householdId !== null && (
+        <AddItemSheet
+          visible={sheetVisible}
+          onClose={() => setSheetVisible(false)}
+          store={currentStore}
+          allStores={stores}
+          householdId={householdId}
+          onSubmit={addItem}
+        />
+      )}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingVertical: 8,
-  },
+  screen: { flex: 1, backgroundColor: '#f9fafb' },
+  scroll: { flex: 1 },
+  scrollContent: { paddingVertical: 8 },
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -166,21 +180,9 @@ const styles = StyleSheet.create({
     padding: 32,
     backgroundColor: '#f9fafb',
   },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyHeading: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 6,
-  },
-  emptySub: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-  },
+  emptyEmoji: { fontSize: 48, marginBottom: 16 },
+  emptyHeading: { fontSize: 18, fontWeight: '600', color: '#111827', marginBottom: 6 },
+  emptySub: { fontSize: 14, color: '#6b7280', textAlign: 'center' },
   allCheckedBanner: {
     marginHorizontal: 16,
     marginTop: 12,
@@ -189,11 +191,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  allCheckedText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1d4ed8',
-  },
+  allCheckedText: { fontSize: 16, fontWeight: '600', color: '#1d4ed8' },
   footer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -207,12 +205,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
-  endTripBtnPulse: {
-    backgroundColor: '#1d4ed8',
-  },
-  endTripLabel: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  endTripBtnPulse: { backgroundColor: '#1d4ed8' },
+  endTripLabel: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  addBtn: { fontSize: 22, color: '#2563eb', fontWeight: '400', marginRight: 4 },
 });
