@@ -39,7 +39,22 @@ export type AddItemMutation = {
   };
 };
 
-export type OfflineMutation = ToggleItemMutation | AddItemMutation;
+export type EndTripMutation = {
+  type: 'end_trip';
+  householdId: string;
+  storeId: string;
+  itemIds: string[];
+  historyItems: {
+    household_id: string;
+    name: string;
+    store_id: string;
+    aisle_id: string;
+    added_by: string;
+    purchased_at: string;
+  }[];
+};
+
+export type OfflineMutation = ToggleItemMutation | AddItemMutation | EndTripMutation;
 
 async function getQueue(): Promise<OfflineMutation[]> {
   const raw = await AsyncStorage.getItem(QUEUE_KEY);

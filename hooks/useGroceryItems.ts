@@ -23,6 +23,7 @@ export function useGroceryItems(
   editItem: (itemId: string, data: EditItemInput) => Promise<{ error: string | null }>;
   deleteItem: (itemId: string) => Promise<{ error: string | null }>;
   moveItemToAisle: (itemId: string, targetAisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>) => Promise<{ error: string | null }>;
+  endTrip: () => Promise<{ error: string | null; raceLost: boolean }>;
 } {
   const [items, setItems] = useState<GroceryItemWithAisle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +72,17 @@ export function useGroceryItems(
           next.delete(mutation.itemId);
           return next;
         });
+        return true;
+      }
+      if (mutation.type === 'end_trip') {
+        const { error: deleteErr } = await supabase
+          .from('grocery_items')
+          .delete()
+          .in('id', mutation.itemIds)
+          .eq('household_id', mutation.householdId);
+        if (deleteErr) return false;
+        // History failure is non-fatal
+        await supabase.from('item_history').insert(mutation.historyItems);
         return true;
       }
       return false;
@@ -340,10 +352,69 @@ export function useGroceryItems(
     return { error: null };
   }, []);
 
+  const endTrip = useCallback(async (): Promise<{ error: string | null; raceLost: boolean }> => {
+    const currentHouseholdId = householdIdRef.current;
+    if (!currentHouseholdId) return { error: 'Not authenticated', raceLost: false };
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user.id;
+    if (!userId) return { error: 'Not authenticated', raceLost: false };
+
+    const checkedItems = itemsRef.current.filter((i) => i.checked);
+    if (checkedItems.length === 0) return { error: null, raceLost: false };
+
+    const now = new Date().toISOString();
+    const itemIds = checkedItems.map((i) => i.id);
+    const historyItems = checkedItems.map((item) => ({
+      household_id: currentHouseholdId,
+      name: item.name.trim().toLowerCase(),
+      store_id: item.store_id,
+      aisle_id: item.aisle_id,
+      added_by: userId,
+      purchased_at: now,
+    }));
+
+    const prevItems = itemsRef.current;
+
+    // Optimistic update — remove checked items immediately
+    setItems((prev) => prev.filter((i) => !i.checked));
+
+    if (!isConnectedRef.current) {
+      // EC5-7: offline — queue end trip; history writes will sync on reconnect
+      await enqueue({
+        type: 'end_trip',
+        householdId: currentHouseholdId,
+        storeId,
+        itemIds,
+        historyItems,
+      });
+      return { error: null, raceLost: false };
+    }
+
+    const { error: deleteErr, count } = await supabase
+      .from('grocery_items')
+      .delete({ count: 'exact' })
+      .in('id', itemIds)
+      .eq('household_id', currentHouseholdId);
+
+    if (deleteErr) {
+      setItems(prevItems);
+      return { error: deleteErr.message, raceLost: false };
+    }
+
+    // EC5-4: fewer rows deleted than expected means another user beat us
+    const raceLost = count !== null && count < itemIds.length;
+
+    // History writes are non-fatal; only write for items we actually deleted
+    await supabase.from('item_history').insert(historyItems);
+
+    return { error: null, raceLost };
+  }, [storeId]);
+
   const itemsWithPending = useMemo(
     () => items.map((i) => ({ ...i, pending_sync: pendingIds.has(i.id) })),
     [items, pendingIds],
   );
 
-  return { items: itemsWithPending, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle };
+  return { items: itemsWithPending, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle, endTrip };
 }

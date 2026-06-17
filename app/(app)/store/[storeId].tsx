@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
 import { AddItemSheet } from '@/components/AddItemSheet';
 import { AisleSection } from '@/components/AisleSection';
 import { EditItemSheet } from '@/components/EditItemSheet';
+import { EndTripModal } from '@/components/EndTripModal';
 import { ItemContextMenu } from '@/components/ItemContextMenu';
 import { MoveAisleSheet } from '@/components/MoveAisleSheet';
 import { useGroceryItems } from '@/hooks/useGroceryItems';
@@ -48,9 +49,10 @@ export default function StoreScreen() {
   const { storeId } = useLocalSearchParams<{ storeId: string }>();
   const { householdId } = useHousehold();
   const { stores } = useStores();
-  const { items, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle } = useGroceryItems(storeId, householdId);
+  const { items, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle, endTrip } = useGroceryItems(storeId, householdId);
 
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [endTripModalVisible, setEndTripModalVisible] = useState(false);
   const [contextMenuItem, setContextMenuItem] = useState<GroceryItemWithAisle | null>(null);
   const [editingItem, setEditingItem] = useState<GroceryItemWithAisle | null>(null);
   const [movingItem, setMovingItem] = useState<GroceryItemWithAisle | null>(null);
@@ -83,6 +85,20 @@ export default function StoreScreen() {
 
   const currentStore = stores.find((s) => s.id === storeId);
   const allChecked = items.length > 0 && items.every((i) => i.checked);
+  const hasChecked = items.some((i) => i.checked);
+
+  function handleEndTripPress() {
+    if (!hasChecked) {
+      // EC5-1: no checked items — show notice instead of modal
+      Alert.alert(
+        'Nothing checked off yet',
+        "Nothing's been checked off yet. Check off items as you shop, then end your trip.",
+        [{ text: 'OK' }],
+      );
+      return;
+    }
+    setEndTripModalVisible(true);
+  }
 
   function isCollapsed(group: AisleGroup): boolean {
     const fullyChecked = group.items.length > 0 && group.items.every((i) => i.checked);
@@ -143,11 +159,24 @@ export default function StoreScreen() {
         }}
       />
 
+      {/* EC5-2: button hidden when no items — empty state shown instead */}
       {items.length === 0 ? (
         <View style={styles.centered}>
           <Text style={styles.emptyEmoji}>🛒</Text>
-          <Text style={styles.emptyHeading}>Your list is empty.</Text>
+          <Text style={styles.emptyHeading}>
+            Your {currentStore?.name ?? ''} list is empty.
+          </Text>
           <Text style={styles.emptySub}>Add items to get started.</Text>
+          {currentStore !== undefined && householdId !== null && (
+            <Pressable
+              style={styles.emptyAddBtn}
+              onPress={() => setSheetVisible(true)}
+              accessibilityLabel="Add item"
+              accessibilityRole="button"
+            >
+              <Text style={styles.emptyAddBtnLabel}>+ Add Item</Text>
+            </Pressable>
+          )}
         </View>
       ) : (
         <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
@@ -171,9 +200,14 @@ export default function StoreScreen() {
           </ScrollView>
 
           <View style={styles.footer}>
-            <View style={[styles.endTripBtn, allChecked && styles.endTripBtnPulse]}>
+            <Pressable
+              style={[styles.endTripBtn, allChecked && styles.endTripBtnPulse]}
+              onPress={handleEndTripPress}
+              accessibilityLabel="End trip"
+              accessibilityRole="button"
+            >
               <Text style={styles.endTripLabel}>End Trip</Text>
-            </View>
+            </Pressable>
           </View>
         </View>
       )}
@@ -220,6 +254,14 @@ export default function StoreScreen() {
           onClose={() => setMovingItem(null)}
         />
       )}
+
+      <EndTripModal
+        visible={endTripModalVisible}
+        storeName={currentStore?.name ?? ''}
+        items={items}
+        onConfirm={endTrip}
+        onClose={() => setEndTripModalVisible(false)}
+      />
     </>
   );
 }
@@ -236,8 +278,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
   },
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyHeading: { fontSize: 18, fontWeight: '600', color: '#111827', marginBottom: 6 },
-  emptySub: { fontSize: 14, color: '#6b7280', textAlign: 'center' },
+  emptyHeading: { fontSize: 18, fontWeight: '600', color: '#111827', marginBottom: 6, textAlign: 'center' },
+  emptySub: { fontSize: 14, color: '#6b7280', textAlign: 'center', marginBottom: 20 },
+  emptyAddBtn: {
+    backgroundColor: '#2563eb',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  emptyAddBtnLabel: { color: '#fff', fontSize: 15, fontWeight: '600' },
   allCheckedBanner: {
     marginHorizontal: 16,
     marginTop: 12,

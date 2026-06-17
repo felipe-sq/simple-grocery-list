@@ -361,10 +361,13 @@ Source: https://aiagentsfirst.com/claude-code-goal-command-tutorial
 
 **For review:** after Claude Code hands back control, your checklist is:
 1. `npx tsc --noEmit` — no type errors
-2. `expo start --ios` — runs on simulator
-3. `expo start --web` — runs in browser
-4. Walk the happy path manually
-5. Test 2–3 edge cases from the ticket
-6. If anything is wrong: describe the issue and let Claude Code fix it in the same session before closing
+2. `npx eslint . --max-warnings 0` — no lint errors or warnings
+3. `expo start --ios` — runs on simulator
+4. `expo start --web` — runs in browser
+5. Walk the happy path manually
+6. Test 2–3 edge cases from the ticket
+7. If anything is wrong: describe the issue and let Claude Code fix it in the same session before closing
+
+> **Claude Code:** run steps 1 and 2 at the end of every ticket before marking it complete.
 
 **Starting the next ticket:** open a fresh `claude` session (`exit` then `claude` again). CLAUDE.md loads fresh. Paste the next ticket's prompt template.
