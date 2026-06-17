@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { Stack } from 'expo-router';
 
+import { AddStapleSheet } from '@/components/AddStapleSheet';
 import { StapleSection } from '@/components/StapleSection';
 import { useHousehold } from '@/hooks/useHousehold';
 import { useStapleItems } from '@/hooks/useStapleItems';
+import { useStores } from '@/hooks/useStores';
 import type { StapleGroup, StapleItemWithDetails } from '@/types';
 
 function buildStoreGroups(items: StapleItemWithDetails[], query: string): StapleGroup[] {
@@ -42,9 +44,12 @@ function buildStoreGroups(items: StapleItemWithDetails[], query: string): Staple
 export default function StaplesScreen() {
   const { householdId } = useHousehold();
   const { items, loading } = useStapleItems(householdId);
+  const { stores } = useStores();
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set());
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [editingStaple, setEditingStaple] = useState<StapleItemWithDetails | null>(null);
 
   const groups = useMemo(() => buildStoreGroups(items, searchQuery), [items, searchQuery]);
 
@@ -65,32 +70,26 @@ export default function StaplesScreen() {
     setSearchQuery('');
   }
 
+  function openAddSheet() {
+    setEditingStaple(null);
+    setSheetVisible(true);
+  }
+
+  function handleItemPress(item: StapleItemWithDetails) {
+    setEditingStaple(item);
+    setSheetVisible(true);
+  }
+
+  function handleSheetClose() {
+    setSheetVisible(false);
+    setEditingStaple(null);
+  }
+
   if (loading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <>
-        <Stack.Screen options={{ title: 'Staples' }} />
-        <View style={styles.centered}>
-          <Text style={styles.emptyHeading}>No staples yet.</Text>
-          <Text style={styles.emptySub}>
-            Add your household's go-to items so you can quickly restock them.
-          </Text>
-          <Pressable
-            style={styles.emptyAddBtn}
-            accessibilityLabel="Add a staple"
-            accessibilityRole="button"
-          >
-            <Text style={styles.emptyAddBtnLabel}>+ Add a Staple</Text>
-          </Pressable>
-        </View>
-      </>
     );
   }
 
@@ -101,6 +100,7 @@ export default function StaplesScreen() {
           title: 'Staples',
           headerRight: () => (
             <Pressable
+              onPress={openAddSheet}
               hitSlop={12}
               accessibilityLabel="Add staple"
               accessibilityRole="button"
@@ -111,63 +111,92 @@ export default function StaplesScreen() {
         }}
       />
 
-      <View style={styles.screen}>
-        {searchVisible ? (
-          <View style={styles.searchBar}>
-            <TextInput
-              style={styles.searchInput}
-              autoFocus
-              placeholder="Search staples…"
-              placeholderTextColor="#9ca3af"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-              clearButtonMode="while-editing"
-              accessibilityLabel="Search staples"
-            />
-            <Pressable onPress={handleSearchClose} hitSlop={8}>
-              <Text style={styles.searchCancel}>Cancel</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.toolbar}>
-            <Pressable
-              onPress={() => setSearchVisible(true)}
-              hitSlop={8}
-              accessibilityLabel="Search staples"
-              accessibilityRole="button"
-            >
-              <Text style={styles.toolbarSearchBtn}>Search 🔍</Text>
-            </Pressable>
-          </View>
-        )}
-
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-        >
-          {groups.map((group) => {
-            const key = group.store?.id ?? '__no_store__';
-            return (
-              <StapleSection
-                key={key}
-                group={group}
-                isCollapsed={!searchVisible && collapsedKeys.has(key)}
-                onToggle={() => toggleSection(key)}
+      {items.length === 0 ? (
+        <View style={styles.centered}>
+          <Text style={styles.emptyHeading}>No staples yet.</Text>
+          <Text style={styles.emptySub}>
+            Add your household's go-to items so you can quickly restock them.
+          </Text>
+          <Pressable
+            style={styles.emptyAddBtn}
+            onPress={openAddSheet}
+            accessibilityLabel="Add a staple"
+            accessibilityRole="button"
+          >
+            <Text style={styles.emptyAddBtnLabel}>+ Add a Staple</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.screen}>
+          {searchVisible ? (
+            <View style={styles.searchBar}>
+              <TextInput
+                style={styles.searchInput}
+                autoFocus
+                placeholder="Search staples…"
+                placeholderTextColor="#9ca3af"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                clearButtonMode="while-editing"
+                accessibilityLabel="Search staples"
               />
-            );
-          })}
-
-          {groups.length === 0 && searchQuery.trim().length > 0 && (
-            <View style={styles.noResults}>
-              <Text style={styles.noResultsText}>
-                No staples match "{searchQuery.trim()}".
-              </Text>
+              <Pressable onPress={handleSearchClose} hitSlop={8}>
+                <Text style={styles.searchCancel}>Cancel</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.toolbar}>
+              <Pressable
+                onPress={() => setSearchVisible(true)}
+                hitSlop={8}
+                accessibilityLabel="Search staples"
+                accessibilityRole="button"
+              >
+                <Text style={styles.toolbarSearchBtn}>Search 🔍</Text>
+              </Pressable>
             </View>
           )}
-        </ScrollView>
-      </View>
+
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            {groups.map((group) => {
+              const key = group.store?.id ?? '__no_store__';
+              return (
+                <StapleSection
+                  key={key}
+                  group={group}
+                  isCollapsed={!searchVisible && collapsedKeys.has(key)}
+                  onToggle={() => toggleSection(key)}
+                  onItemPress={handleItemPress}
+                />
+              );
+            })}
+
+            {groups.length === 0 && searchQuery.trim().length > 0 && (
+              <View style={styles.noResults}>
+                <Text style={styles.noResultsText}>
+                  No staples match "{searchQuery.trim()}".
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      )}
+
+      {householdId !== null && (
+        <AddStapleSheet
+          key={editingStaple?.id ?? 'add'}
+          visible={sheetVisible}
+          onClose={handleSheetClose}
+          householdId={householdId}
+          allStores={stores}
+          stapleToEdit={editingStaple}
+        />
+      )}
     </>
   );
 }

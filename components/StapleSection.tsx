@@ -6,9 +6,10 @@ type Props = {
   group: StapleGroup;
   isCollapsed: boolean;
   onToggle: () => void;
+  onItemPress: (item: StapleItemWithDetails) => void;
 };
 
-function StapleRow({ item }: { item: StapleItemWithDetails }) {
+function StapleRow({ item, onPress }: { item: StapleItemWithDetails; onPress: () => void }) {
   const qtyUnit = [
     item.default_qty !== null ? String(item.default_qty) : null,
     item.default_unit ?? null,
@@ -17,7 +18,12 @@ function StapleRow({ item }: { item: StapleItemWithDetails }) {
     .join(' ');
 
   return (
-    <View style={rowStyles.row}>
+    <Pressable
+      style={rowStyles.row}
+      onPress={onPress}
+      accessibilityLabel={`Edit ${item.name}`}
+      accessibilityRole="button"
+    >
       <View style={rowStyles.info}>
         <Text style={rowStyles.name}>{item.name}</Text>
         {qtyUnit.length > 0 && <Text style={rowStyles.meta}>{qtyUnit}</Text>}
@@ -27,11 +33,11 @@ function StapleRow({ item }: { item: StapleItemWithDetails }) {
           {item.aisle.name}
         </Text>
       )}
-    </View>
+    </Pressable>
   );
 }
 
-export function StapleSection({ group, isCollapsed, onToggle }: Props) {
+export function StapleSection({ group, isCollapsed, onToggle, onItemPress }: Props) {
   const storeName = group.store?.name ?? 'No store';
   const count = group.items.length;
 
@@ -49,7 +55,9 @@ export function StapleSection({ group, isCollapsed, onToggle }: Props) {
       </Pressable>
 
       {!isCollapsed &&
-        group.items.map((item) => <StapleRow key={item.id} item={item} />)}
+        group.items.map((item) => (
+          <StapleRow key={item.id} item={item} onPress={() => onItemPress(item)} />
+        ))}
     </View>
   );
 }
