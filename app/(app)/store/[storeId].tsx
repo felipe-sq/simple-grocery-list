@@ -5,6 +5,9 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 
 import { AddItemSheet } from '@/components/AddItemSheet';
 import { AisleSection } from '@/components/AisleSection';
+import { EditItemSheet } from '@/components/EditItemSheet';
+import { ItemContextMenu } from '@/components/ItemContextMenu';
+import { MoveAisleSheet } from '@/components/MoveAisleSheet';
 import { useGroceryItems } from '@/hooks/useGroceryItems';
 import { useHousehold } from '@/hooks/useHousehold';
 import { useStores } from '@/hooks/useStores';
@@ -45,9 +48,12 @@ export default function StoreScreen() {
   const { storeId } = useLocalSearchParams<{ storeId: string }>();
   const { householdId } = useHousehold();
   const { stores } = useStores();
-  const { items, loading, toggleItem, addItem } = useGroceryItems(storeId, householdId);
+  const { items, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle } = useGroceryItems(storeId, householdId);
 
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [contextMenuItem, setContextMenuItem] = useState<GroceryItemWithAisle | null>(null);
+  const [editingItem, setEditingItem] = useState<GroceryItemWithAisle | null>(null);
+  const [movingItem, setMovingItem] = useState<GroceryItemWithAisle | null>(null);
 
   const aisleGroups = useMemo(() => buildAisleGroups(items), [items]);
 
@@ -81,6 +87,22 @@ export default function StoreScreen() {
   function isCollapsed(group: AisleGroup): boolean {
     const fullyChecked = group.items.length > 0 && group.items.every((i) => i.checked);
     return fullyChecked && !manuallyExpanded.has(group.aisle.id);
+  }
+
+  function handleLongPressItem(item: GroceryItemWithAisle) {
+    setContextMenuItem(item);
+  }
+
+  function handleContextEdit() {
+    const item = contextMenuItem;
+    setContextMenuItem(null);
+    setEditingItem(item);
+  }
+
+  function handleContextMoveAisle() {
+    const item = contextMenuItem;
+    setContextMenuItem(null);
+    setMovingItem(item);
   }
 
   function handleToggle(group: AisleGroup) {
@@ -137,6 +159,7 @@ export default function StoreScreen() {
                 isCollapsed={isCollapsed(group)}
                 onToggle={() => handleToggle(group)}
                 onToggleItem={toggleItem}
+                onLongPressItem={handleLongPressItem}
               />
             ))}
 
@@ -163,6 +186,38 @@ export default function StoreScreen() {
           allStores={stores}
           householdId={householdId}
           onSubmit={addItem}
+        />
+      )}
+
+      {contextMenuItem !== null && (
+        <ItemContextMenu
+          item={contextMenuItem}
+          onEdit={handleContextEdit}
+          onMoveAisle={handleContextMoveAisle}
+          onDelete={() => deleteItem(contextMenuItem.id)}
+          onClose={() => setContextMenuItem(null)}
+        />
+      )}
+
+      {householdId !== null && (
+        <EditItemSheet
+          key={editingItem?.id ?? 'none'}
+          item={editingItem}
+          allStores={stores}
+          householdId={householdId}
+          onSubmit={editItem}
+          onClose={() => setEditingItem(null)}
+        />
+      )}
+
+      {householdId !== null && (
+        <MoveAisleSheet
+          item={movingItem}
+          householdId={householdId}
+          onMove={(aisle) => {
+            if (movingItem) moveItemToAisle(movingItem.id, aisle);
+          }}
+          onClose={() => setMovingItem(null)}
         />
       )}
     </>

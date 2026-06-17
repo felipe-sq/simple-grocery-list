@@ -5,9 +5,10 @@ import type { GroceryItemWithAisle } from '@/types';
 type Props = {
   item: GroceryItemWithAisle;
   onToggle: () => void;
+  onLongPress?: (item: GroceryItemWithAisle) => void;
 };
 
-export function GroceryItemRow({ item, onToggle }: Props) {
+export function GroceryItemRow({ item, onToggle, onLongPress }: Props) {
   const quantityLabel =
     item.quantity !== null && item.unit
       ? `${item.quantity} ${item.unit}`
@@ -18,7 +19,12 @@ export function GroceryItemRow({ item, onToggle }: Props) {
   const label = quantityLabel ? `${item.name} (${quantityLabel})` : item.name;
 
   return (
-    <View style={[styles.row, item.checked && styles.rowChecked]}>
+    <Pressable
+      style={[styles.row, item.checked && styles.rowChecked]}
+      onLongPress={onLongPress ? () => onLongPress(item) : undefined}
+      delayLongPress={400}
+      accessibilityLabel={`${item.name}, long press for options`}
+    >
       <Pressable
         style={({ pressed }) => [
           styles.circle,
@@ -40,7 +46,7 @@ export function GroceryItemRow({ item, onToggle }: Props) {
         {label}
       </Text>
       {item.pending_sync && <Text style={styles.pendingIcon}>⚠</Text>}
-    </View>
+    </Pressable>
   );
 }
 

@@ -66,6 +66,16 @@ export type AddItemInput = {
   notes: string | null;
 };
 
+export type EditItemInput = {
+  name: string;
+  storeId: string;
+  aisleId: string;
+  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+  quantity: number | null;
+  unit: string | null;
+  notes: string | null;
+};
+
 export type SuggestionResult = {
   name: string;
   store_id: string;

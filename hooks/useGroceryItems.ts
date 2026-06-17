@@ -3,7 +3,7 @@ import { LayoutAnimation, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { enqueue, flush } from '@/lib/offlineQueue';
-import type { AddItemInput, GroceryItemWithAisle } from '@/types';
+import type { AddItemInput, Aisle, EditItemInput, GroceryItemWithAisle } from '@/types';
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -20,6 +20,9 @@ export function useGroceryItems(
   loading: boolean;
   toggleItem: (itemId: string) => Promise<void>;
   addItem: (data: AddItemInput) => Promise<{ error: string | null }>;
+  editItem: (itemId: string, data: EditItemInput) => Promise<{ error: string | null }>;
+  deleteItem: (itemId: string) => Promise<{ error: string | null }>;
+  moveItemToAisle: (itemId: string, targetAisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>) => Promise<{ error: string | null }>;
 } {
   const [items, setItems] = useState<GroceryItemWithAisle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -260,10 +263,87 @@ export function useGroceryItems(
     return { error: null };
   }, [storeId]);
 
+  const editItem = useCallback(async (itemId: string, data: EditItemInput): Promise<{ error: string | null }> => {
+    const currentHouseholdId = householdIdRef.current;
+    if (!currentHouseholdId) return { error: 'Not authenticated' };
+
+    const prevItems = itemsRef.current;
+
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId
+          ? { ...i, name: data.name, store_id: data.storeId, aisle_id: data.aisleId, aisle: data.aisle, quantity: data.quantity, unit: data.unit, notes: data.notes }
+          : i,
+      ),
+    );
+
+    const { error } = await supabase
+      .from('grocery_items')
+      .update({ name: data.name, store_id: data.storeId, aisle_id: data.aisleId, quantity: data.quantity, unit: data.unit, notes: data.notes })
+      .eq('id', itemId)
+      .eq('household_id', currentHouseholdId);
+
+    if (error) {
+      setItems(prevItems);
+      return { error: error.message };
+    }
+    return { error: null };
+  }, []);
+
+  const deleteItem = useCallback(async (itemId: string): Promise<{ error: string | null }> => {
+    const currentHouseholdId = householdIdRef.current;
+    if (!currentHouseholdId) return { error: 'Not authenticated' };
+
+    const prevItems = itemsRef.current;
+
+    setItems((prev) => prev.filter((i) => i.id !== itemId));
+
+    const { error } = await supabase
+      .from('grocery_items')
+      .delete()
+      .eq('id', itemId)
+      .eq('household_id', currentHouseholdId);
+
+    if (error) {
+      setItems(prevItems);
+      return { error: error.message };
+    }
+    return { error: null };
+  }, []);
+
+  const moveItemToAisle = useCallback(async (itemId: string, targetAisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>): Promise<{ error: string | null }> => {
+    const currentHouseholdId = householdIdRef.current;
+    if (!currentHouseholdId) return { error: 'Not authenticated' };
+
+    const prevItems = itemsRef.current;
+    const aisleItems = prevItems.filter((i) => i.aisle_id === targetAisle.id);
+    const newSortOrder = aisleItems.length > 0 ? Math.max(...aisleItems.map((i) => i.sort_order)) + 10 : 0;
+
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId
+          ? { ...i, aisle_id: targetAisle.id, aisle: targetAisle, sort_order: newSortOrder }
+          : i,
+      ),
+    );
+
+    const { error } = await supabase
+      .from('grocery_items')
+      .update({ aisle_id: targetAisle.id, sort_order: newSortOrder })
+      .eq('id', itemId)
+      .eq('household_id', currentHouseholdId);
+
+    if (error) {
+      setItems(prevItems);
+      return { error: error.message };
+    }
+    return { error: null };
+  }, []);
+
   const itemsWithPending = useMemo(
     () => items.map((i) => ({ ...i, pending_sync: pendingIds.has(i.id) })),
     [items, pendingIds],
   );
 
-  return { items: itemsWithPending, loading, toggleItem, addItem };
+  return { items: itemsWithPending, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle };
 }

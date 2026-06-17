@@ -1,16 +1,17 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { GroceryItemRow } from '@/components/GroceryItemRow';
-import type { AisleGroup } from '@/types';
+import type { AisleGroup, GroceryItemWithAisle } from '@/types';
 
 type Props = {
   group: AisleGroup;
   isCollapsed: boolean;
   onToggle: () => void;
   onToggleItem: (itemId: string) => void;
+  onLongPressItem?: (item: GroceryItemWithAisle) => void;
 };
 
-export function AisleSection({ group, isCollapsed, onToggle, onToggleItem }: Props) {
+export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLongPressItem }: Props) {
   const { aisle, items } = group;
   const total = items.length;
   const checkedCount = items.filter((i) => i.checked).length;
@@ -36,6 +37,7 @@ export function AisleSection({ group, isCollapsed, onToggle, onToggleItem }: Pro
             key={item.id}
             item={item}
             onToggle={() => onToggleItem(item.id)}
+            onLongPress={onLongPressItem}
           />
         ))}
     </View>
