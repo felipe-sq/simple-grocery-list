@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { NestableDraggableFlatList, RenderItemParams } from 'react-native-draggable-flatlist';
 
 import { GroceryItemRow } from '@/components/GroceryItemRow';
 import type { AisleGroup, GroceryItemWithAisle } from '@/types';
@@ -9,12 +11,26 @@ type Props = {
   onToggle: () => void;
   onToggleItem: (itemId: string) => void;
   onLongPressItem?: (item: GroceryItemWithAisle) => void;
+  onReorderItems: (aisleId: string, items: GroceryItemWithAisle[]) => void;
 };
 
-export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLongPressItem }: Props) {
+export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLongPressItem, onReorderItems }: Props) {
   const { aisle, items } = group;
   const total = items.length;
   const checkedCount = items.filter((i) => i.checked).length;
+
+  const renderItem = useCallback(
+    ({ item, drag, isActive }: RenderItemParams<GroceryItemWithAisle>) => (
+      <GroceryItemRow
+        item={item}
+        onToggle={() => onToggleItem(item.id)}
+        onLongPress={onLongPressItem}
+        drag={drag}
+        isActive={isActive}
+      />
+    ),
+    [onToggleItem, onLongPressItem],
+  );
 
   return (
     <View style={styles.section}>
@@ -31,15 +47,15 @@ export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLon
         </Text>
       </Pressable>
 
-      {!isCollapsed &&
-        items.map((item) => (
-          <GroceryItemRow
-            key={item.id}
-            item={item}
-            onToggle={() => onToggleItem(item.id)}
-            onLongPress={onLongPressItem}
-          />
-        ))}
+      {!isCollapsed && (
+        <NestableDraggableFlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          onDragEnd={({ data }) => onReorderItems(aisle.id, data)}
+          scrollEnabled={false}
+        />
+      )}
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { NestableScrollContainer } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
@@ -54,7 +55,7 @@ export default function StoreScreen() {
   const { storeId } = useLocalSearchParams<{ storeId: string }>();
   const { householdId } = useHousehold();
   const { stores } = useStores();
-  const { items, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle, endTrip } = useGroceryItems(storeId, householdId);
+  const { items, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle, reorderItems, endTrip } = useGroceryItems(storeId, householdId);
   const { lookupBarcode } = useBarcodeScanner(householdId);
 
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -253,7 +254,7 @@ export default function StoreScreen() {
         </View>
       ) : (
         <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
-          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          <NestableScrollContainer style={styles.scroll} contentContainerStyle={styles.scrollContent}>
             {aisleGroups.map((group) => (
               <AisleSection
                 key={group.aisle.id}
@@ -262,6 +263,7 @@ export default function StoreScreen() {
                 onToggle={() => handleToggle(group)}
                 onToggleItem={toggleItem}
                 onLongPressItem={handleLongPressItem}
+                onReorderItems={reorderItems}
               />
             ))}
 
@@ -270,7 +272,7 @@ export default function StoreScreen() {
                 <Text style={styles.allCheckedText}>Everything's in the cart 🛒</Text>
               </View>
             )}
-          </ScrollView>
+          </NestableScrollContainer>
 
           <View style={styles.footer}>
             <Pressable

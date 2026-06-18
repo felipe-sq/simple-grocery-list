@@ -26,6 +26,7 @@ export function useGroceryItems(
   editItem: (itemId: string, data: EditItemInput) => Promise<{ error: string | null }>;
   deleteItem: (itemId: string) => Promise<{ error: string | null }>;
   moveItemToAisle: (itemId: string, targetAisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>) => Promise<{ error: string | null }>;
+  reorderItems: (aisleId: string, reorderedItems: GroceryItemWithAisle[]) => Promise<void>;
   endTrip: () => Promise<{ error: string | null; raceLost: boolean }>;
 } {
   const [items, setItems] = useState<GroceryItemWithAisle[]>([]);
@@ -381,6 +382,30 @@ export function useGroceryItems(
     return { error: null };
   }, []);
 
+  const reorderItems = useCallback(async (aisleId: string, reorderedItems: GroceryItemWithAisle[]): Promise<void> => {
+    const currentHouseholdId = householdIdRef.current;
+    if (!currentHouseholdId) return;
+
+    const withNewOrder = reorderedItems.map((item, index) => ({ ...item, sort_order: index * 10 }));
+
+    setItems((prev) => {
+      const rest = prev.filter((i) => i.aisle_id !== aisleId);
+      return [...rest, ...withNewOrder];
+    });
+
+    if (!isConnectedRef.current) return;
+
+    await Promise.all(
+      withNewOrder.map(({ id, sort_order }) =>
+        supabase
+          .from('grocery_items')
+          .update({ sort_order })
+          .eq('id', id)
+          .eq('household_id', currentHouseholdId),
+      ),
+    );
+  }, []);
+
   const endTrip = useCallback(async (): Promise<{ error: string | null; raceLost: boolean }> => {
     const currentHouseholdId = householdIdRef.current;
     if (!currentHouseholdId) return { error: 'Not authenticated', raceLost: false };
@@ -449,5 +474,5 @@ export function useGroceryItems(
     [items, pendingIds],
   );
 
-  return { items: itemsWithPending, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle, endTrip };
+  return { items: itemsWithPending, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle, reorderItems, endTrip };
 }
