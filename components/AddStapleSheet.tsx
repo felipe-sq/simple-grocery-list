@@ -11,6 +11,8 @@ import { AislePicker } from '@/components/AislePicker';
 import { SuggestionsDropdown } from '@/components/SuggestionsDropdown';
 import { useAisles } from '@/hooks/useAisles';
 import { useItemSuggestions } from '@/hooks/useItemSuggestions';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { enqueue } from '@/lib/offlineQueue';
 import { supabase } from '@/lib/supabase';
 import type { Aisle, Store, StapleItemWithDetails, SuggestionResult } from '@/types';
 
@@ -52,6 +54,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
 
   const { aisles, createAisle } = useAisles(selectedStoreId ?? '', householdId);
   const { suggestions } = useItemSuggestions(name, householdId);
+  const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
     if (visible) {
@@ -82,9 +85,15 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
 
     setNameError(null);
     setSubmitError(null);
+
+    // EC7-4: duplicate name warning (warn but allow) — skip check when offline
+    if (!isOnline) {
+      await performSave(trimmedName);
+      return;
+    }
+
     setSubmitting(true);
 
-    // EC7-4: duplicate name warning (warn but allow)
     const baseQuery = supabase
       .from('staple_items')
       .select('id')
@@ -131,6 +140,21 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
         })
         .eq('id', stapleToEdit.id);
       error = updateError?.message ?? null;
+    } else if (!isOnline) {
+      // Offline: queue the add; item will appear after sync
+      await enqueue({
+        type: 'add_staple',
+        householdId,
+        staple: {
+          household_id: householdId,
+          name: trimmedName,
+          default_store_id: selectedStoreId,
+          default_aisle_id: selectedAisle?.id ?? null,
+          default_qty: qty ? parseFloat(qty) : null,
+          default_unit: unit.trim() || null,
+          sort_order: Date.now(),
+        },
+      });
     } else {
       const { data: topRow } = await supabase
         .from('staple_items')

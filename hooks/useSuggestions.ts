@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { enqueue } from '@/lib/offlineQueue';
 import { supabase } from '@/lib/supabase';
 import type { Suggestion } from '@/types';
 
@@ -25,6 +27,7 @@ export function useSuggestions(householdId: string | null): {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const householdIdRef = useRef(householdId);
+  const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
     householdIdRef.current = householdId;
@@ -146,14 +149,21 @@ export function useSuggestions(householdId: string | null): {
     setAllSuggestions((prev) => prev.filter((s) => s.item_name !== suggestion.item_name));
 
     const now = new Date();
-    await supabase.from('suggestion_dismissals').insert({
+    const dismissal = {
       household_id: hId,
       item_name: suggestion.item_name.toLowerCase().trim(),
       dismissed_at: now.toISOString(),
       resurface_at: new Date(now.getTime() + 7 * 24 * 3600000).toISOString(),
       dismissed_by: session.user.id,
-    });
-  }, []);
+    };
+
+    if (!isOnline) {
+      await enqueue({ type: 'dismiss_suggestion', householdId: hId, dismissal });
+      return;
+    }
+
+    await supabase.from('suggestion_dismissals').insert(dismissal);
+  }, [isOnline]);
 
   const addToList = useCallback(async (suggestion: Suggestion): Promise<{ error: string | null }> => {
     const hId = householdIdRef.current;

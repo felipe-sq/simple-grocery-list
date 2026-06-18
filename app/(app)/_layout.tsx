@@ -2,15 +2,21 @@ import type { Session } from '@supabase/supabase-js';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { usePathname, useRouter } from 'expo-router';
 import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useHousehold } from '@/hooks/useHousehold';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { usePresence } from '@/hooks/usePresence';
 import { useStores } from '@/hooks/useStores';
+import { flush } from '@/lib/offlineQueue';
+import { supabase } from '@/lib/supabase';
 
 const STORE_ROUTE_RE = /^\/store\/(.+)$/;
+
+const NON_GROCERY_TYPES = ['add_staple', 'dismiss_suggestion'] as const;
 
 function getDisplayName(session: Session): string {
   const meta = session.user.user_metadata;
@@ -27,12 +33,32 @@ export default function AppLayout() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const router = useRouter();
+  const { isOnline } = useNetworkStatus();
 
   const userId = session?.user.id ?? null;
   const userName = session ? getDisplayName(session) : '';
   const activeStoreId = STORE_ROUTE_RE.exec(pathname)?.[1] ?? null;
 
   const presenceByStore = usePresence(householdId, userId, userName, activeStoreId);
+
+  // Flush non-grocery mutations (add_staple, dismiss_suggestion) on reconnect
+  const wasOnlineRef = useRef(isOnline);
+  useEffect(() => {
+    if (!wasOnlineRef.current && isOnline) {
+      flush(async (mutation) => {
+        if (mutation.type === 'add_staple') {
+          const { error } = await supabase.from('staple_items').insert(mutation.staple);
+          return !error;
+        }
+        if (mutation.type === 'dismiss_suggestion') {
+          await supabase.from('suggestion_dismissals').insert(mutation.dismissal);
+          return true;
+        }
+        return false;
+      }, NON_GROCERY_TYPES);
+    }
+    wasOnlineRef.current = isOnline;
+  }, [isOnline]);
 
   return (
     <BottomSheetModalProvider>
@@ -58,12 +84,19 @@ export default function AppLayout() {
               href={`/store/${store.id}`}
               style={styles.tabItem}
             >
-              <Text
-                style={[styles.tabLabel, pathname === `/store/${store.id}` && styles.tabLabelActive]}
-                numberOfLines={1}
-              >
-                {store.name}
-              </Text>
+              <View style={styles.tabLabelRow}>
+                <Text
+                  style={[styles.tabLabel, pathname === `/store/${store.id}` && styles.tabLabelActive]}
+                  numberOfLines={1}
+                >
+                  {store.name}
+                </Text>
+                {!isOnline && (
+                  <View style={styles.offlineBadge}>
+                    <Text style={styles.offlineBadgeText}>Offline</Text>
+                  </View>
+                )}
+              </View>
               {present.length > 0 && (
                 <Text style={styles.presenceLabel} numberOfLines={1}>
                   {present.join(', ')}
@@ -131,6 +164,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     minWidth: 0,
   },
+  tabLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   tabLabel: {
     fontSize: 11,
     fontWeight: '500',
@@ -140,6 +178,18 @@ const styles = StyleSheet.create({
   tabLabelActive: {
     color: '#2563eb',
     fontWeight: '600',
+  },
+  offlineBadge: {
+    backgroundColor: '#f59e0b',
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  offlineBadgeText: {
+    fontSize: 8,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.2,
   },
   presenceLabel: {
     fontSize: 9,

@@ -1,9 +1,12 @@
+import NetInfo from '@react-native-community/netinfo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 import { enqueue, flush } from '@/lib/offlineQueue';
 import type { AddItemInput, Aisle, EditItemInput, GroceryItemWithAisle } from '@/types';
+
+const GROCERY_TYPES = ['toggle_item', 'add_item', 'delete_item', 'end_trip'] as const;
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -30,7 +33,7 @@ export function useGroceryItems(
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   const isInitialLoad = useRef(true);
-  // false until first SUBSCRIBED; lets us flush on first connect (catches previous-session queue)
+  // Tracks whether the Supabase realtime channel is live
   const isConnectedRef = useRef(false);
   const itemsRef = useRef(items);
   const householdIdRef = useRef(householdId);
@@ -65,13 +68,21 @@ export function useGroceryItems(
           .from('grocery_items')
           .insert(mutation.groceryItem);
         if (itemErr) return false;
-        // History failure is non-fatal — item is already saved
         await supabase.from('item_history').insert(mutation.historyItem);
         setPendingIds((prev) => {
           const next = new Set(prev);
           next.delete(mutation.itemId);
           return next;
         });
+        return true;
+      }
+      if (mutation.type === 'delete_item') {
+        // Silently discard conflicts (item deleted by another member)
+        await supabase
+          .from('grocery_items')
+          .delete()
+          .eq('id', mutation.itemId)
+          .eq('household_id', mutation.householdId);
         return true;
       }
       if (mutation.type === 'end_trip') {
@@ -81,12 +92,11 @@ export function useGroceryItems(
           .in('id', mutation.itemIds)
           .eq('household_id', mutation.householdId);
         if (deleteErr) return false;
-        // History failure is non-fatal
         await supabase.from('item_history').insert(mutation.historyItems);
         return true;
       }
       return false;
-    });
+    }, GROCERY_TYPES);
   }, []);
 
   useEffect(() => {
@@ -151,6 +161,20 @@ export function useGroceryItems(
     };
   }, [storeId, householdId, flushQueue]);
 
+  // Secondary flush trigger: netinfo reconnect catches cases where the
+  // Supabase channel is already SUBSCRIBED when the device regains internet.
+  useEffect(() => {
+    let wasOnline = true;
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const online = state.isConnected === true && state.isInternetReachable !== false;
+      if (!wasOnline && online && isConnectedRef.current) {
+        flushQueue();
+      }
+      wasOnline = online;
+    });
+    return unsubscribe;
+  }, [flushQueue]);
+
   const toggleItem = useCallback(async (itemId: string) => {
     const item = itemsRef.current.find((i) => i.id === itemId);
     const currentHouseholdId = householdIdRef.current;
@@ -163,7 +187,6 @@ export function useGroceryItems(
     const newCheckedAt = newChecked ? new Date().toISOString() : null;
     const newCheckedBy = newChecked ? userId : null;
 
-    // Optimistic update — EC4-1 (uncheck reverses instantly)
     setItems((prev) =>
       prev.map((i) =>
         i.id === itemId
@@ -272,7 +295,6 @@ export function useGroceryItems(
     const { error: itemErr } = await supabase.from('grocery_items').insert(groceryItem);
     if (itemErr) return { error: itemErr.message };
 
-    // History failure is non-fatal
     await supabase.from('item_history').insert(historyItem);
     return { error: null };
   }, [storeId]);
@@ -308,9 +330,14 @@ export function useGroceryItems(
     const currentHouseholdId = householdIdRef.current;
     if (!currentHouseholdId) return { error: 'Not authenticated' };
 
-    const prevItems = itemsRef.current;
-
+    // Optimistic delete — remove from UI immediately
     setItems((prev) => prev.filter((i) => i.id !== itemId));
+
+    if (!isConnectedRef.current) {
+      // Offline: queue the delete; no ⚠ icon needed since item is removed from UI
+      await enqueue({ type: 'delete_item', itemId, householdId: currentHouseholdId });
+      return { error: null };
+    }
 
     const { error } = await supabase
       .from('grocery_items')
@@ -319,8 +346,8 @@ export function useGroceryItems(
       .eq('household_id', currentHouseholdId);
 
     if (error) {
-      setItems(prevItems);
-      return { error: error.message };
+      // Network dropped — queue for retry; keep optimistic removal
+      await enqueue({ type: 'delete_item', itemId, householdId: currentHouseholdId });
     }
     return { error: null };
   }, []);
@@ -376,8 +403,6 @@ export function useGroceryItems(
       purchased_at: now,
     }));
 
-    const prevItems = itemsRef.current;
-
     // Optimistic update — remove checked items immediately
     setItems((prev) => prev.filter((i) => !i.checked));
 
@@ -400,14 +425,20 @@ export function useGroceryItems(
       .eq('household_id', currentHouseholdId);
 
     if (deleteErr) {
-      setItems(prevItems);
-      return { error: deleteErr.message, raceLost: false };
+      // Network dropped — queue for retry; keep optimistic removal
+      await enqueue({
+        type: 'end_trip',
+        householdId: currentHouseholdId,
+        storeId,
+        itemIds,
+        historyItems,
+      });
+      return { error: null, raceLost: false };
     }
 
     // EC5-4: fewer rows deleted than expected means another user beat us
     const raceLost = count !== null && count < itemIds.length;
 
-    // History writes are non-fatal; only write for items we actually deleted
     await supabase.from('item_history').insert(historyItems);
 
     return { error: null, raceLost };
