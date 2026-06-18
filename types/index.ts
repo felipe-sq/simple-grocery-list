@@ -84,6 +84,19 @@ export type SuggestionResult = {
   aisle_name: string;
 };
 
+export type Suggestion = {
+  item_name: string;
+  store_id: string;
+  store_name: string;
+  aisle_id: string;
+  aisle_name: string;
+  score: number;
+  category: 'might_be_running_low' | 'ai_picks';
+  rules_matched: string[];
+  days_since_last_purchase: number | null;
+  last_purchased_at: string | null;
+};
+
 export type StapleItem = {
   id: string;
   household_id: string;

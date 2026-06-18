@@ -193,6 +193,8 @@ Deno.serve(async (req) => {
       return respond({ error: "household_id is required" }, 400);
     }
 
+    const force = url.searchParams.get("force") === "true";
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return respond({ error: "Unauthorized" }, 401);
@@ -223,15 +225,17 @@ Deno.serve(async (req) => {
       return respond({ error: "Forbidden" }, 403);
     }
 
-    // Serve from cache when fresh
-    const { data: cached } = await supabase
-      .from("suggestion_cache")
-      .select("suggestions, expires_at")
-      .eq("household_id", householdId)
-      .single();
+    // Serve from cache when fresh (skip when force=true for pull-to-refresh)
+    if (!force) {
+      const { data: cached } = await supabase
+        .from("suggestion_cache")
+        .select("suggestions, expires_at")
+        .eq("household_id", householdId)
+        .single();
 
-    if (cached && new Date(cached.expires_at as string) > new Date()) {
-      return respond(cached.suggestions, 200);
+      if (cached && new Date(cached.expires_at as string) > new Date()) {
+        return respond(cached.suggestions, 200);
+      }
     }
 
     // Fetch store/aisle name maps and rule data in two parallel batches
