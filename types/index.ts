@@ -138,3 +138,9 @@ export type ParsedVoiceItem = {
   rawText: string;
   parsed: boolean; // false = EC2-3: couldn't extract a clean name, raw text pre-filled
 };
+
+export type PresencePayload = {
+  user_id: string;
+  user_name: string;
+  store_id: string | null;
+};
