@@ -9,12 +9,15 @@ import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { EditItemSheet } from '@/components/EditItemSheet';
 import { EndTripModal } from '@/components/EndTripModal';
 import { ItemContextMenu } from '@/components/ItemContextMenu';
+import { ListeningOverlay } from '@/components/ListeningOverlay';
 import { MoveAisleSheet } from '@/components/MoveAisleSheet';
+import { VoiceReviewSheet } from '@/components/VoiceReviewSheet';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useGroceryItems } from '@/hooks/useGroceryItems';
 import { useHousehold } from '@/hooks/useHousehold';
 import { useStores } from '@/hooks/useStores';
-import type { AisleGroup, BarcodePrefill, GroceryItemWithAisle } from '@/types';
+import { parseVoiceInput } from '@/lib/parseVoiceInput';
+import type { AisleGroup, BarcodePrefill, GroceryItemWithAisle, ParsedVoiceItem } from '@/types';
 
 function buildAisleGroups(items: GroceryItemWithAisle[]): AisleGroup[] {
   const map = new Map<string, AisleGroup>();
@@ -66,6 +69,11 @@ export default function StoreScreen() {
   const [scanMode, setScanMode] = useState<'header' | 'sheet'>('header');
   const [barcodePrefill, setBarcodePrefill] = useState<BarcodePrefill | null>(null);
   const addItemSheetRef = useRef<AddItemSheetHandle>(null);
+
+  // Voice input state
+  const [voiceOverlayVisible, setVoiceOverlayVisible] = useState(false);
+  const [parsedVoiceItems, setParsedVoiceItems] = useState<ParsedVoiceItem[]>([]);
+  const [voiceReviewVisible, setVoiceReviewVisible] = useState(false);
 
   const aisleGroups = useMemo(() => buildAisleGroups(items), [items]);
 
@@ -174,6 +182,12 @@ export default function StoreScreen() {
     }
   }
 
+  function handleVoiceTranscribed(transcript: string) {
+    setVoiceOverlayVisible(false);
+    setParsedVoiceItems(parseVoiceInput(transcript));
+    setVoiceReviewVisible(true);
+  }
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -196,6 +210,14 @@ export default function StoreScreen() {
                 accessibilityRole="button"
               >
                 <Text style={styles.headerIconBtn}>📷</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setVoiceOverlayVisible(true)}
+                hitSlop={12}
+                accessibilityLabel="Voice input"
+                accessibilityRole="button"
+              >
+                <Text style={styles.headerIconBtn}>🎤</Text>
               </Pressable>
               <Pressable
                 onPress={() => setSheetVisible(true)}
@@ -285,6 +307,27 @@ export default function StoreScreen() {
         onScan={handleBarcodeScan}
         onCancel={() => setScannerVisible(false)}
       />
+
+      <ListeningOverlay
+        visible={voiceOverlayVisible}
+        onTranscribed={handleVoiceTranscribed}
+        onCancel={() => setVoiceOverlayVisible(false)}
+        onTypeInstead={() => {
+          setVoiceOverlayVisible(false);
+          setSheetVisible(true);
+        }}
+      />
+
+      {currentStore !== undefined && householdId !== null && (
+        <VoiceReviewSheet
+          visible={voiceReviewVisible}
+          onClose={() => setVoiceReviewVisible(false)}
+          store={currentStore}
+          householdId={householdId}
+          items={parsedVoiceItems}
+          addItem={addItem}
+        />
+      )}
 
       {contextMenuItem !== null && (
         <ItemContextMenu

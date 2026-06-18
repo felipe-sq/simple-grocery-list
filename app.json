@@ -33,6 +33,13 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Grocery List to use the microphone for voice input.",
+          "speechRecognitionPermission": "Allow Grocery List to use speech recognition to add items hands-free."
+        }
       ]
     ],
     "experiments": {

@@ -130,3 +130,11 @@ export type StapleGroup = {
   store: Pick<Store, 'id' | 'name' | 'sort_order'> | null;
   items: StapleItemWithDetails[];
 };
+
+export type ParsedVoiceItem = {
+  name: string;
+  qty: number;
+  unit: string | null;
+  rawText: string;
+  parsed: boolean; // false = EC2-3: couldn't extract a clean name, raw text pre-filled
+};
