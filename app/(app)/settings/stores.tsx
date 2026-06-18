@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -80,6 +81,71 @@ export default function StoresSettingsScreen() {
     await Promise.all(aisles.map((a, idx) => supabase.from('aisles').update({ sort_order: idx * 10 }).eq('id', a.id)));
   }
 
+  // EC8-2: delete an aisle, optionally moving its items to another aisle first
+  async function executeAisleDelete(aisleId: string, moveToAisleId: string | null): Promise<void> {
+    if (moveToAisleId !== null) {
+      await supabase
+        .from('grocery_items')
+        .update({ aisle_id: moveToAisleId })
+        .eq('aisle_id', aisleId)
+        .eq('household_id', householdId);
+    }
+    await supabase.from('aisles').delete().eq('id', aisleId);
+  }
+
+  function handleAisleDeleteRequest(storeId: string, aisleId: string): void {
+    const aisleName = storeAisles[storeId]?.find((a) => a.id === aisleId)?.name ?? 'this aisle';
+    const otherAisles = (storeAisles[storeId] ?? []).filter((a) => a.id !== aisleId);
+
+    async function deleteWithCount() {
+      const { count } = await supabase
+        .from('grocery_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('aisle_id', aisleId)
+        .eq('household_id', householdId);
+
+      const itemCount = count ?? 0;
+
+      if (itemCount > 0 && otherAisles.length === 0) {
+        Alert.alert(
+          'Cannot delete',
+          `Move items out of "${aisleName}" first, or delete the items before removing this aisle.`,
+          [{ text: 'OK' }],
+        );
+        return;
+      }
+
+      if (itemCount > 0) {
+        Alert.alert(
+          `"${aisleName}" has ${itemCount} item${itemCount !== 1 ? 's' : ''}. Where should they go?`,
+          undefined,
+          [
+            ...otherAisles.map((target) => ({
+              text: target.name,
+              onPress: () => executeAisleDelete(aisleId, target.id),
+            })),
+            { text: 'Cancel', style: 'cancel' as const },
+          ],
+        );
+      } else {
+        Alert.alert(
+          `Delete "${aisleName}"?`,
+          undefined,
+          [
+            { text: 'Cancel', style: 'cancel' as const },
+            {
+              text: 'Delete',
+              style: 'destructive' as const,
+              onPress: () => executeAisleDelete(aisleId, null),
+            },
+          ],
+        );
+      }
+    }
+
+    deleteWithCount();
+  }
+
   function startAddStore() {
     setNewStoreName('');
     setAddStoreError(null);
@@ -116,6 +182,7 @@ export default function StoresSettingsScreen() {
             onAisleAdd={handleAisleAdd}
             onAisleRename={handleAisleRename}
             onAisleReorder={handleAisleReorder}
+            onAisleDeleteRequest={handleAisleDeleteRequest}
           />
         ))}
 

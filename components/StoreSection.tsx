@@ -16,6 +16,7 @@ type Props = {
   onAisleAdd: (storeId: string, name: string) => Promise<string | null>;
   onAisleRename: (aisleId: string, name: string) => Promise<string | null>;
   onAisleReorder: (storeId: string, aisles: Aisle[]) => Promise<void>;
+  onAisleDeleteRequest: (storeId: string, aisleId: string) => void;
 };
 
 export function StoreSection({
@@ -26,6 +27,7 @@ export function StoreSection({
   onAisleAdd,
   onAisleRename,
   onAisleReorder,
+  onAisleDeleteRequest,
 }: Props) {
   function handleDragEnd({ data }: DragEndParams<Aisle>) {
     onAisleReorder(store.id, data);
@@ -46,6 +48,7 @@ export function StoreSection({
             drag={drag}
             isActive={isActive}
             onSaveName={onAisleRename}
+            onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
           />
         )}
         onDragEnd={handleDragEnd}

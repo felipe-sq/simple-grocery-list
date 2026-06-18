@@ -10,9 +10,10 @@ type Props = {
   drag: () => void;
   isActive: boolean;
   onSaveName: (aisleId: string, newName: string) => Promise<string | null>;
+  onDeleteRequest?: (aisleId: string) => void;
 };
 
-export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName }: Props) {
+export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDeleteRequest }: Props) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(aisle.name);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +74,17 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName }: Pro
               selectTextOnFocus
             />
             {error !== null && <Text style={styles.errorText}>{error}</Text>}
+            {onDeleteRequest !== undefined && (
+              <Pressable
+                style={styles.deleteBtn}
+                onPress={() => { setEditing(false); onDeleteRequest(aisle.id); }}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete aisle ${aisle.name}`}
+              >
+                <Text style={styles.deleteBtnText}>Delete aisle</Text>
+              </Pressable>
+            )}
           </View>
         ) : (
           <Text style={styles.aisleName}>{aisle.name}</Text>
@@ -126,6 +138,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#dc2626',
     marginTop: 4,
+  },
+  deleteBtn: {
+    marginTop: 10,
+    paddingVertical: 6,
+  },
+  deleteBtnText: {
+    fontSize: 13,
+    color: '#dc2626',
   },
   aisleName: {
     flex: 1,
