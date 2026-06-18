@@ -1,18 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
 
-import { AddItemSheet } from '@/components/AddItemSheet';
+import { AddItemSheet, type AddItemSheetHandle } from '@/components/AddItemSheet';
 import { AisleSection } from '@/components/AisleSection';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { EditItemSheet } from '@/components/EditItemSheet';
 import { EndTripModal } from '@/components/EndTripModal';
 import { ItemContextMenu } from '@/components/ItemContextMenu';
 import { MoveAisleSheet } from '@/components/MoveAisleSheet';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useGroceryItems } from '@/hooks/useGroceryItems';
 import { useHousehold } from '@/hooks/useHousehold';
 import { useStores } from '@/hooks/useStores';
-import type { AisleGroup, GroceryItemWithAisle } from '@/types';
+import type { AisleGroup, BarcodePrefill, GroceryItemWithAisle } from '@/types';
 
 function buildAisleGroups(items: GroceryItemWithAisle[]): AisleGroup[] {
   const map = new Map<string, AisleGroup>();
@@ -50,12 +52,20 @@ export default function StoreScreen() {
   const { householdId } = useHousehold();
   const { stores } = useStores();
   const { items, loading, toggleItem, addItem, editItem, deleteItem, moveItemToAisle, endTrip } = useGroceryItems(storeId, householdId);
+  const { lookupBarcode } = useBarcodeScanner(householdId);
 
   const [sheetVisible, setSheetVisible] = useState(false);
   const [endTripModalVisible, setEndTripModalVisible] = useState(false);
   const [contextMenuItem, setContextMenuItem] = useState<GroceryItemWithAisle | null>(null);
   const [editingItem, setEditingItem] = useState<GroceryItemWithAisle | null>(null);
   const [movingItem, setMovingItem] = useState<GroceryItemWithAisle | null>(null);
+
+  // Barcode scanner state
+  const [scannerVisible, setScannerVisible] = useState(false);
+  // 'header' = scanner opened from header 📷; 'sheet' = opened from inside AddItemSheet (EC3-7)
+  const [scanMode, setScanMode] = useState<'header' | 'sheet'>('header');
+  const [barcodePrefill, setBarcodePrefill] = useState<BarcodePrefill | null>(null);
+  const addItemSheetRef = useRef<AddItemSheetHandle>(null);
 
   const aisleGroups = useMemo(() => buildAisleGroups(items), [items]);
 
@@ -133,6 +143,37 @@ export default function StoreScreen() {
     });
   }
 
+  // Opened from header 📷
+  function handleHeaderScanPress() {
+    setScanMode('header');
+    setScannerVisible(true);
+  }
+
+  // EC3-7: opened from inside AddItemSheet
+  function handleSheetScanRequest() {
+    setScanMode('sheet');
+    setScannerVisible(true);
+  }
+
+  async function handleBarcodeScan(barcode: string) {
+    setScannerVisible(false);
+
+    const result = await lookupBarcode(barcode);
+
+    if (scanMode === 'header') {
+      // Open AddItemSheet pre-filled (EC3-1, EC3-2, EC3-5 notices shown inside sheet)
+      setBarcodePrefill(result);
+      setSheetVisible(true);
+    } else {
+      // EC3-7: sheet is already open — fill only the name, keep store/aisle as-is
+      addItemSheetRef.current?.setNameFromBarcode(
+        result.name,
+        result.barcode,
+        result.offline,
+      );
+    }
+  }
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -147,14 +188,24 @@ export default function StoreScreen() {
         options={{
           title: currentStore?.name ?? '',
           headerRight: () => (
-            <Pressable
-              onPress={() => setSheetVisible(true)}
-              hitSlop={12}
-              accessibilityLabel="Add item"
-              accessibilityRole="button"
-            >
-              <Text style={styles.addBtn}>＋</Text>
-            </Pressable>
+            <View style={styles.headerButtons}>
+              <Pressable
+                onPress={handleHeaderScanPress}
+                hitSlop={12}
+                accessibilityLabel="Scan barcode"
+                accessibilityRole="button"
+              >
+                <Text style={styles.headerIconBtn}>📷</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setSheetVisible(true)}
+                hitSlop={12}
+                accessibilityLabel="Add item"
+                accessibilityRole="button"
+              >
+                <Text style={styles.addBtn}>＋</Text>
+              </Pressable>
+            </View>
           ),
         }}
       />
@@ -214,14 +265,26 @@ export default function StoreScreen() {
 
       {currentStore !== undefined && householdId !== null && (
         <AddItemSheet
+          ref={addItemSheetRef}
           visible={sheetVisible}
-          onClose={() => setSheetVisible(false)}
+          onClose={() => {
+            setSheetVisible(false);
+            setBarcodePrefill(null);
+          }}
           store={currentStore}
           allStores={stores}
           householdId={householdId}
           onSubmit={addItem}
+          barcodePrefill={barcodePrefill}
+          onRequestBarcodeScanner={handleSheetScanRequest}
         />
       )}
+
+      <BarcodeScanner
+        visible={scannerVisible}
+        onScan={handleBarcodeScan}
+        onCancel={() => setScannerVisible(false)}
+      />
 
       {contextMenuItem !== null && (
         <ItemContextMenu
@@ -311,5 +374,7 @@ const styles = StyleSheet.create({
   },
   endTripBtnPulse: { backgroundColor: '#1d4ed8' },
   endTripLabel: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  headerButtons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  headerIconBtn: { fontSize: 20 },
   addBtn: { fontSize: 22, color: '#2563eb', fontWeight: '400', marginRight: 4 },
 });

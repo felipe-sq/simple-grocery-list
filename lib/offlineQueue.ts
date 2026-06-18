@@ -25,7 +25,8 @@ export type AddItemMutation = {
     unit: string | null;
     notes: string | null;
     sort_order: number;
-    source: 'manual';
+    source: 'manual' | 'barcode' | 'voice' | 'staples' | 'suggestion';
+    barcode: string | null;
     created_by: string;
     created_at: string;
   };
@@ -34,6 +35,7 @@ export type AddItemMutation = {
     name: string;
     store_id: string;
     aisle_id: string;
+    barcode: string | null;
     added_by: string;
     purchased_at: string;
   };

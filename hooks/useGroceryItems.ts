@@ -234,7 +234,8 @@ export function useGroceryItems(
       unit: data.unit,
       notes: data.notes,
       sort_order: sortOrder,
-      source: 'manual' as const,
+      source: (data.source ?? 'manual') as 'manual' | 'barcode' | 'voice' | 'staples' | 'suggestion',
+      barcode: data.barcode ?? null,
       created_by: userId,
       created_at: now,
     };
@@ -244,6 +245,7 @@ export function useGroceryItems(
       name: data.name.trim().toLowerCase(),
       store_id: data.storeId,
       aisle_id: data.aisleId,
+      barcode: data.barcode ?? null,
       added_by: userId,
       purchased_at: now,
     };

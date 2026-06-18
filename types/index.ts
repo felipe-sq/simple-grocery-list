@@ -64,6 +64,18 @@ export type AddItemInput = {
   quantity: number | null;
   unit: string | null;
   notes: string | null;
+  barcode?: string | null;
+  source?: GroceryItem['source'];
+};
+
+export type BarcodePrefill = {
+  barcode: string;
+  name: string | null;
+  fromHistory: boolean;
+  offline?: boolean;
+  historyStoreId?: string;
+  historyAisleId?: string;
+  historyAisle?: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
 };
 
 export type EditItemInput = {

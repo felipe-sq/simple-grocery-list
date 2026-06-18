@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 
@@ -7,7 +7,12 @@ import { SuggestionsDropdown } from '@/components/SuggestionsDropdown';
 import { useAisles } from '@/hooks/useAisles';
 import { useItemSuggestions } from '@/hooks/useItemSuggestions';
 import { supabase } from '@/lib/supabase';
-import type { AddItemInput, Aisle, Store, SuggestionResult } from '@/types';
+import type { AddItemInput, Aisle, BarcodePrefill, Store, SuggestionResult } from '@/types';
+
+export type AddItemSheetHandle = {
+  // EC3-7: fills only the name from a barcode scan triggered inside the sheet
+  setNameFromBarcode: (name: string | null, barcode: string, offline?: boolean) => void;
+};
 
 type Props = {
   visible: boolean;
@@ -16,9 +21,14 @@ type Props = {
   allStores: Store[];
   householdId: string;
   onSubmit: (data: AddItemInput) => Promise<{ error: string | null }>;
+  barcodePrefill?: BarcodePrefill | null;
+  onRequestBarcodeScanner: () => void;
 };
 
-export function AddItemSheet({ visible, onClose, store, allStores, householdId, onSubmit }: Props) {
+export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddItemSheet(
+  { visible, onClose, store, allStores, householdId, onSubmit, barcodePrefill, onRequestBarcodeScanner },
+  ref,
+) {
   const modalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ['85%'], []);
 
@@ -32,9 +42,56 @@ export function AddItemSheet({ visible, onClose, store, allStores, householdId, 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [storeOpen, setStoreOpen] = useState(false);
+  const [barcodeValue, setBarcodeValue] = useState<string | null>(null);
+  const [scanNotice, setScanNotice] = useState<string | null>(null);
+  const [fromHistory, setFromHistory] = useState(false);
 
   const { aisles, createAisle } = useAisles(selectedStoreId, householdId);
   const { suggestions } = useItemSuggestions(name, householdId);
+
+  // EC3-7: imperative handle so parent can fill only the name after in-sheet scan
+  useImperativeHandle(ref, () => ({
+    setNameFromBarcode(scannedName, barcode, offline = false) {
+      setBarcodeValue(barcode);
+      setFromHistory(false);
+      if (offline) {
+        setScanNotice("Can't look up this product offline.");
+      } else if (scannedName === null) {
+        setName('');
+        setScanNotice('Product not found. Enter a name manually.');
+      } else {
+        setName(scannedName);
+        setScanNotice(null);
+        setNameError(null);
+      }
+    },
+  }));
+
+  // Apply barcode prefill when it arrives (header 📷 button flow)
+  const appliedPrefillRef = useRef<BarcodePrefill | null>(null);
+  useEffect(() => {
+    if (!barcodePrefill || barcodePrefill === appliedPrefillRef.current) return;
+    appliedPrefillRef.current = barcodePrefill;
+
+    setBarcodeValue(barcodePrefill.barcode);
+    setFromHistory(barcodePrefill.fromHistory);
+
+    if (barcodePrefill.offline) {
+      setScanNotice("Can't look up this product offline.");
+    } else if (barcodePrefill.name === null) {
+      setName('');
+      setScanNotice('Product not found. Enter a name manually.');
+    } else {
+      setName(barcodePrefill.name);
+      setScanNotice(null);
+    }
+
+    // EC3-2: also fill store + aisle when available from history
+    if (barcodePrefill.fromHistory) {
+      if (barcodePrefill.historyStoreId) setSelectedStoreId(barcodePrefill.historyStoreId);
+      if (barcodePrefill.historyAisle) setSelectedAisle(barcodePrefill.historyAisle);
+    }
+  }, [barcodePrefill]);
 
   useEffect(() => {
     if (visible) {
@@ -59,6 +116,10 @@ export function AddItemSheet({ visible, onClose, store, allStores, householdId, 
     setNameError(null);
     setSubmitError(null);
     setStoreOpen(false);
+    setBarcodeValue(null);
+    setScanNotice(null);
+    setFromHistory(false);
+    appliedPrefillRef.current = null;
   }, [store.id]);
 
   // EC1-7: confirm discard if form has content
@@ -83,6 +144,7 @@ export function AddItemSheet({ visible, onClose, store, allStores, householdId, 
     setSelectedAisle({ id: s.aisle_id, name: s.aisle_name, sort_order: 0 });
     setNameError(null);
     setSubmitError(null);
+    setScanNotice(null);
   }
 
   async function handleSubmit() {
@@ -116,6 +178,8 @@ export function AddItemSheet({ visible, onClose, store, allStores, householdId, 
       quantity: qty ? parseFloat(qty) : null,
       unit: unit.trim() || null,
       notes: notes.trim() || null,
+      barcode: barcodeValue ?? null,
+      source: barcodeValue ? 'barcode' : 'manual',
     });
 
     setSubmitting(false);
@@ -160,14 +224,34 @@ export function AddItemSheet({ visible, onClose, store, allStores, householdId, 
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.label}>Item name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="e.g. Oat milk"
-          placeholderTextColor="#9ca3af"
-          value={name}
-          onChangeText={(t) => { setName(t); setNameError(null); setSubmitError(null); }}
-          returnKeyType="next"
-        />
+        <View style={styles.nameRow}>
+          <TextInput
+            style={[styles.input, styles.nameInput]}
+            placeholder="e.g. Oat milk"
+            placeholderTextColor="#9ca3af"
+            value={name}
+            onChangeText={(t) => { setName(t); setNameError(null); setSubmitError(null); setScanNotice(null); }}
+            returnKeyType="next"
+          />
+          <Pressable
+            style={styles.scanBtn}
+            onPress={onRequestBarcodeScanner}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Scan barcode"
+          >
+            <Text style={styles.scanBtnIcon}>📷</Text>
+          </Pressable>
+        </View>
+
+        {/* EC3-2: "From your history" label */}
+        {fromHistory && (
+          <Text style={styles.fromHistoryLabel}>📋 From your history</Text>
+        )}
+        {/* EC3-1 / EC3-5 scan notices */}
+        {scanNotice !== null && (
+          <Text style={styles.scanNotice}>{scanNotice}</Text>
+        )}
         {nameError !== null && <Text style={styles.errorText}>{nameError}</Text>}
         <SuggestionsDropdown suggestions={suggestions} onSelect={handleSuggestionSelect} />
 
@@ -253,7 +337,7 @@ export function AddItemSheet({ visible, onClose, store, allStores, householdId, 
       </BottomSheetScrollView>
     </BottomSheetModal>
   );
-}
+});
 
 const styles = StyleSheet.create({
   header: {
@@ -271,6 +355,24 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   label: { fontSize: 13, fontWeight: '500', color: '#6b7280', marginBottom: 6, marginTop: 16 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  nameInput: { flex: 1 },
+  scanBtn: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    marginTop: 0,
+  },
+  scanBtnIcon: { fontSize: 24 },
+  fromHistoryLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 6,
+  },
+  scanNotice: {
+    fontSize: 13,
+    color: '#d97706',
+    marginTop: 6,
+  },
   input: {
     borderWidth: 1,
     borderColor: '#d1d5db',
