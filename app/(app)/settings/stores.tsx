@@ -9,7 +9,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { StoreSection } from '@/components/StoreSection';
 import { useHousehold } from '@/hooks/useHousehold';
@@ -170,8 +169,7 @@ export default function StoresSettingsScreen() {
   }
 
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={styles.content}>
         {stores.map((store) => (
           <StoreSection
             key={store.id}
@@ -232,12 +230,10 @@ export default function StoresSettingsScreen() {
           )}
         </View>
       </ScrollView>
-    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: 16, paddingBottom: 40, backgroundColor: '#f9fafb', flexGrow: 1 },
   addStoreSection: { marginTop: 4 },

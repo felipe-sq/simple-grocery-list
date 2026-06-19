@@ -1,5 +1,4 @@
 import type { Session } from '@supabase/supabase-js';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { usePathname } from 'expo-router';
 import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
 import { useEffect, useRef } from 'react';
@@ -60,7 +59,6 @@ export default function AppLayout() {
   }, [isOnline]);
 
   return (
-    <BottomSheetModalProvider>
     <Tabs>
       <View style={styles.content}>
         {loading && (
@@ -131,7 +129,6 @@ export default function AppLayout() {
         </TabTrigger>
       </TabList>
     </Tabs>
-    </BottomSheetModalProvider>
   );
 }
 
