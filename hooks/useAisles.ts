@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 import type { Aisle } from '@/types';
@@ -11,6 +11,7 @@ export function useAisles(
   loading: boolean;
   createAisle: (name: string) => Promise<{ aisle: Aisle | null; error: string | null }>;
 } {
+  const instanceId = useId();
   const [aisles, setAisles] = useState<Aisle[]>([]);
   const [loading, setLoading] = useState(true);
   const aislesRef = useRef(aisles);
@@ -46,7 +47,7 @@ export function useAisles(
     fetchAisles();
 
     const channel = supabase
-      .channel(`aisles_picker_${storeId}`)
+      .channel(`aisles_picker_${storeId}_${instanceId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'aisles', filter: `store_id=eq.${storeId}` },

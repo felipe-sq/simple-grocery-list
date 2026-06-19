@@ -10,6 +10,7 @@ import 'react-native-reanimated';
 import { useAuth } from '@/hooks/useAuth';
 import { useHousehold } from '@/hooks/useHousehold';
 import { HouseholdProvider } from '@/lib/HouseholdProvider';
+import { StoresProvider } from '@/lib/StoresProvider';
 import { PENDING_JOIN_TOKEN_KEY } from '@/app/(onboarding)/join';
 import { supabase } from '@/lib/supabase';
 
@@ -32,7 +33,9 @@ export default function RootLayout() {
 
   return (
     <HouseholdProvider>
-      <RootLayoutNav fontsLoaded={fontsLoaded} />
+      <StoresProvider>
+        <RootLayoutNav fontsLoaded={fontsLoaded} />
+      </StoresProvider>
     </HouseholdProvider>
   );
 }
