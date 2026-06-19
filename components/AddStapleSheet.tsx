@@ -57,6 +57,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
   const { isOnline } = useNetworkStatus();
 
   useEffect(() => {
+    console.log('[AddStapleSheet] visible changed:', visible, 'modalRef:', !!modalRef.current);
     if (visible) {
       modalRef.current?.present();
     } else {

@@ -28,7 +28,10 @@ export default function StoresSettingsScreen() {
   const storeInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    if (!householdId) return;
+    if (!householdId) {
+      setLoading(false);
+      return;
+    }
 
     async function fetchAll() {
       const [storesRes, aislesRes] = await Promise.all([

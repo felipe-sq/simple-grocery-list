@@ -110,6 +110,7 @@ export default function StaplesScreen() {
   }
 
   function openAddSheet() {
+    console.log('[Staples] openAddSheet called, householdId:', householdId, 'sheetVisible before:', sheetVisible);
     setEditingStaple(null);
     setSheetVisible(true);
   }

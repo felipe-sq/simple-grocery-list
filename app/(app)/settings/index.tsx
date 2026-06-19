@@ -29,6 +29,7 @@ export default function SettingsScreen() {
   }, [householdId]);
 
   async function handleGenerateInvite() {
+    console.log('[Settings] generateInvite pressed, householdId:', householdId);
     if (!householdId || !session) return;
     setGenerating(true);
 
@@ -98,7 +99,10 @@ export default function SettingsScreen() {
         </Text>
         <Pressable
           style={styles.button}
-          onPress={() => router.push('/(app)/settings/stores')}
+          onPress={() => {
+            console.log('[Settings] manageStores pressed, householdId:', householdId);
+            router.push('/(app)/settings/stores');
+          }}
           accessibilityRole="button"
           accessibilityLabel="Manage Stores and Aisles"
         >

@@ -38,14 +38,18 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function fetchHousehold() {
-      const { data: rows } = await supabase
+      const { data: rows, error } = await supabase
         .from('household_members')
         .select('household_id')
         .eq('user_id', userId)
         .order('joined_at')
         .limit(1);
+      if (error) {
+        console.error('[HouseholdProvider] household_members query failed:', error.code, error.message);
+      }
       if (cancelled) return;
       const firstRow = (rows as { household_id: string }[] | null)?.[0] ?? null;
+      console.log('[HouseholdProvider] householdId resolved:', firstRow?.household_id ?? null);
       setHouseholdId(firstRow?.household_id ?? null);
       setLoading(false);
     }
