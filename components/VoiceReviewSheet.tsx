@@ -248,6 +248,8 @@ export function VoiceReviewSheet({
             onPress={handleAdd}
             disabled={btnDisabled}
             accessibilityRole="button"
+            accessibilityLabel={submitting ? 'Adding items' : btnLabel}
+            accessibilityState={{ disabled: btnDisabled }}
           >
             <Text style={styles.addBtnText}>{submitting ? 'Adding…' : btnLabel}</Text>
           </Pressable>
@@ -255,6 +257,7 @@ export function VoiceReviewSheet({
             style={styles.cancelBtn}
             onPress={onClose}
             accessibilityRole="button"
+            accessibilityLabel="Cancel and discard"
           >
             <Text style={styles.cancelBtnText}>Cancel</Text>
           </Pressable>

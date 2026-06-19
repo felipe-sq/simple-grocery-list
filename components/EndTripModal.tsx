@@ -160,6 +160,7 @@ export function EndTripModal({ visible, storeName, items, onConfirm, onClose }: 
                   disabled={checkedItems.length === 0 || confirming}
                   accessibilityLabel="Confirm end trip"
                   accessibilityRole="button"
+                  accessibilityState={{ disabled: checkedItems.length === 0 || confirming }}
                 >
                   {confirming ? (
                     <ActivityIndicator color="#fff" size="small" />
@@ -180,6 +181,8 @@ export function EndTripModal({ visible, storeName, items, onConfirm, onClose }: 
                   onPress={handleClose}
                   disabled={confirming}
                   accessibilityRole="button"
+                  accessibilityLabel="Cancel"
+                  accessibilityState={{ disabled: confirming }}
                 >
                   <Text style={styles.cancelLabel}>Cancel</Text>
                 </Pressable>
@@ -273,7 +276,7 @@ const styles = StyleSheet.create({
   },
   noCheckedNote: {
     fontSize: 13,
-    color: '#9ca3af',
+    color: '#6b7280',
     textAlign: 'center',
     marginBottom: 12,
     fontStyle: 'italic',

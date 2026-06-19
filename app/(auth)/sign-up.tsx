@@ -50,6 +50,7 @@ export default function SignUp() {
         autoComplete="email"
         textContentType="emailAddress"
         editable={!loading}
+        accessibilityLabel="Email"
       />
       <TextInput
         style={styles.input}
@@ -60,12 +61,16 @@ export default function SignUp() {
         autoComplete="new-password"
         textContentType="newPassword"
         editable={!loading}
+        accessibilityLabel="Password, minimum 6 characters"
       />
 
       <Pressable
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleSignUp}
         disabled={loading}
+        accessibilityRole="button"
+        accessibilityLabel={loading ? 'Creating account' : 'Create Account'}
+        accessibilityState={{ disabled: loading }}
       >
         <Text style={styles.buttonText}>{loading ? 'Creating account…' : 'Create Account'}</Text>
       </Pressable>

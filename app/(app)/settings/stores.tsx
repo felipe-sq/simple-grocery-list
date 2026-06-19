@@ -199,14 +199,25 @@ export default function StoresSettingsScreen() {
                   onChangeText={(t) => { setNewStoreName(t); setAddStoreError(null); }}
                   onSubmitEditing={commitAddStore}
                   returnKeyType="done"
+                  accessibilityLabel="Store name"
                 />
-                <Pressable onPress={commitAddStore} style={styles.addStoreBtn}>
+                <Pressable
+                  onPress={commitAddStore}
+                  style={styles.addStoreBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add Store"
+                >
                   <Text style={styles.addStoreBtnText}>Add Store</Text>
                 </Pressable>
                 {addStoreError !== null && <Text style={styles.error}>{addStoreError}</Text>}
               </View>
             ) : (
-              <Pressable onPress={startAddStore} style={styles.addStoreRow}>
+              <Pressable
+                onPress={startAddStore}
+                style={styles.addStoreRow}
+                accessibilityRole="button"
+                accessibilityLabel={`Add a store, ${stores.length} of ${MAX_STORES} used`}
+              >
                 <Text style={styles.addStoreText}>
                   {'+ Add a store '}
                   <Text style={styles.addStoreCount}>({stores.length} of {MAX_STORES} used)</Text>

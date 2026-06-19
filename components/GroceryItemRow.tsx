@@ -28,6 +28,7 @@ export function GroceryItemRow({ item, onToggle, onLongPress, drag, isActive }: 
         onLongPress={onLongPress ? () => onLongPress(item) : undefined}
         delayLongPress={400}
         accessibilityLabel={`${item.name}, long press for options`}
+        accessibilityRole="button"
       >
         <Pressable
           style={({ pressed }) => [
@@ -38,14 +39,15 @@ export function GroceryItemRow({ item, onToggle, onLongPress, drag, isActive }: 
           onPress={onToggle}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: item.checked }}
-          accessibilityLabel={`${item.name}, ${item.checked ? 'checked' : 'unchecked'}`}
-          hitSlop={8}
+          accessibilityLabel={`${label}, ${item.checked ? 'checked' : 'unchecked'}`}
+          hitSlop={11}
         >
           {item.checked && <View style={styles.checkFill} />}
         </Pressable>
         <Text
           style={[styles.name, item.checked && styles.nameChecked]}
           numberOfLines={2}
+          importantForAccessibility="no"
         >
           {label}
         </Text>
@@ -54,8 +56,9 @@ export function GroceryItemRow({ item, onToggle, onLongPress, drag, isActive }: 
           <Pressable
             onLongPress={drag}
             style={styles.dragHandle}
-            hitSlop={8}
-            accessibilityLabel="Drag to reorder"
+            hitSlop={11}
+            accessibilityRole="button"
+            accessibilityLabel={`Drag to reorder ${item.name}`}
           >
             <Text style={styles.dragIcon}>≡</Text>
           </Pressable>
@@ -75,7 +78,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f3f4f6',
   },
   rowChecked: {
-    opacity: 0.4,
+    opacity: 0.6,
   },
   rowActive: {
     backgroundColor: '#f3f4f6',

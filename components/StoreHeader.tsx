@@ -61,13 +61,20 @@ export function StoreHeader({ store, allStores, onRename }: Props) {
             autoCapitalize="characters"
             returnKeyType="done"
             selectTextOnFocus
+            accessibilityLabel="Store name"
           />
           {error !== null && <Text style={styles.error}>{error}</Text>}
         </View>
       ) : (
         <Text style={styles.storeName}>{store.name.toUpperCase()}</Text>
       )}
-      <Pressable onPress={startEdit} hitSlop={8}>
+      <Pressable
+        onPress={startEdit}
+        hitSlop={12}
+        style={styles.renameBtnWrap}
+        accessibilityRole="button"
+        accessibilityLabel={`Rename ${store.name}`}
+      >
         <Text style={styles.renameBtn}>Rename</Text>
       </Pressable>
     </View>
@@ -101,5 +108,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     color: '#374151',
   },
+  renameBtnWrap: { minHeight: 44, justifyContent: 'center' },
   renameBtn: { color: '#2563eb', fontWeight: '500', fontSize: 14 },
 });

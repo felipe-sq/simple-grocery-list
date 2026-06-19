@@ -81,6 +81,9 @@ export default function SettingsScreen() {
           style={[styles.button, generating && styles.buttonDisabled]}
           onPress={handleGenerateInvite}
           disabled={generating}
+          accessibilityRole="button"
+          accessibilityLabel={generating ? 'Generating invite link' : 'Generate Invite Link'}
+          accessibilityState={{ disabled: generating }}
         >
           <Text style={styles.buttonText}>
             {generating ? 'Generating…' : 'Generate Invite Link'}
@@ -96,13 +99,20 @@ export default function SettingsScreen() {
         <Pressable
           style={styles.button}
           onPress={() => router.push('/(app)/settings/stores')}
+          accessibilityRole="button"
+          accessibilityLabel="Manage Stores and Aisles"
         >
           <Text style={styles.buttonText}>Manage Stores & Aisles</Text>
         </Pressable>
       </View>
 
       <View style={styles.section}>
-        <Pressable style={styles.signOutButton} onPress={handleSignOut}>
+        <Pressable
+          style={styles.signOutButton}
+          onPress={handleSignOut}
+          accessibilityRole="button"
+          accessibilityLabel="Sign Out"
+        >
           <Text style={styles.signOutText}>Sign Out</Text>
         </Pressable>
       </View>

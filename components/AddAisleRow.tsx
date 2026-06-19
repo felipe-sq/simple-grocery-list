@@ -46,7 +46,12 @@ export function AddAisleRow({ existingAisles, onAdd }: Props) {
 
   if (!active) {
     return (
-      <Pressable onPress={start} style={styles.addButton}>
+      <Pressable
+        onPress={start}
+        style={styles.addButton}
+        accessibilityRole="button"
+        accessibilityLabel="Add aisle"
+      >
         <Text style={styles.addText}>+ Add aisle</Text>
       </Pressable>
     );
@@ -64,6 +69,7 @@ export function AddAisleRow({ existingAisles, onAdd }: Props) {
         onSubmitEditing={commit}
         onBlur={commit}
         returnKeyType="done"
+        accessibilityLabel="Aisle name"
       />
       {error !== null && <Text style={styles.error}>{error}</Text>}
     </View>

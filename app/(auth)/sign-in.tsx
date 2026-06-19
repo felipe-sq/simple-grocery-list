@@ -34,6 +34,7 @@ export default function SignIn() {
         autoComplete="email"
         textContentType="emailAddress"
         editable={!loading}
+        accessibilityLabel="Email"
       />
       <TextInput
         style={styles.input}
@@ -44,12 +45,16 @@ export default function SignIn() {
         autoComplete="password"
         textContentType="password"
         editable={!loading}
+        accessibilityLabel="Password"
       />
 
       <Pressable
         style={[styles.button, loading && styles.buttonDisabled]}
         onPress={handleSignIn}
         disabled={loading}
+        accessibilityRole="button"
+        accessibilityLabel={loading ? 'Signing in' : 'Sign In'}
+        accessibilityState={{ disabled: loading }}
       >
         <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Sign In'}</Text>
       </Pressable>

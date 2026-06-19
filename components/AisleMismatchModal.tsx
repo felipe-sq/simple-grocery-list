@@ -75,7 +75,12 @@ export function AisleMismatchModal({ visible, mismatches, householdId, onConfirm
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>Pick Aisles</Text>
-            <Pressable onPress={onClose} hitSlop={8} accessibilityLabel="Close">
+            <Pressable
+              onPress={onClose}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Close pick aisles"
+            >
               <Text style={styles.closeBtn}>✕</Text>
             </Pressable>
           </View>
@@ -124,7 +129,11 @@ export function AisleMismatchModal({ visible, mismatches, householdId, onConfirm
                       {creating ? (
                         <ActivityIndicator size="small" color="#2563eb" />
                       ) : (
-                        <Pressable onPress={() => handleCreateAisle(m.targetStoreId, m.staple.id)}>
+                        <Pressable
+                          onPress={() => handleCreateAisle(m.targetStoreId, m.staple.id)}
+                          accessibilityRole="button"
+                          accessibilityLabel="Add new aisle"
+                        >
                           <Text style={styles.createBtnText}>Add</Text>
                         </Pressable>
                       )}
@@ -133,6 +142,8 @@ export function AisleMismatchModal({ visible, mismatches, householdId, onConfirm
                     <Pressable
                       style={styles.aisleRow}
                       onPress={() => { setCreatingFor(m.staple.id); setNewAisleName(''); }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Add new aisle for ${m.targetStoreName}`}
                     >
                       <Text style={styles.newAisleText}>+ New aisle</Text>
                     </Pressable>
@@ -147,6 +158,11 @@ export function AisleMismatchModal({ visible, mismatches, householdId, onConfirm
               style={styles.confirmBtn}
               onPress={handleConfirm}
               accessibilityRole="button"
+              accessibilityLabel={
+                skipCount > 0
+                  ? `Add ${resolvedCount} item${resolvedCount !== 1 ? 's' : ''}, skip ${skipCount}`
+                  : `Add ${resolvedCount} item${resolvedCount !== 1 ? 's' : ''}`
+              }
             >
               <Text style={styles.confirmBtnText}>
                 {skipCount > 0
@@ -189,7 +205,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f3f4f6',
   },
   itemName: { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 2 },
-  itemStore: { fontSize: 12, color: '#9ca3af', marginBottom: 8 },
+  itemStore: { fontSize: 12, color: '#6b7280', marginBottom: 8 },
   aisleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
   radioIcon: { fontSize: 14, color: '#2563eb', marginRight: 10, width: 16 },
   aisleText: { fontSize: 15, color: '#374151' },

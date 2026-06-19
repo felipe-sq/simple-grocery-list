@@ -59,6 +59,8 @@ export function MoveAisleSheet({ item, householdId, onMove, onClose }: Props) {
                   onMove({ id: aisle.id, name: aisle.name, sort_order: aisle.sort_order });
                   onClose();
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Move to ${aisle.name}`}
               >
                 <Text style={styles.optionText}>{aisle.name}</Text>
               </Pressable>

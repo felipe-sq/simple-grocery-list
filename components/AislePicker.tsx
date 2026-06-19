@@ -58,7 +58,12 @@ export function AislePicker({ aisles, selectedAisleId, onSelect, onCreateAisle }
 
   return (
     <View>
-      <Pressable style={styles.picker} onPress={openPicker}>
+      <Pressable
+        style={styles.picker}
+        onPress={openPicker}
+        accessibilityRole="button"
+        accessibilityLabel={selectedAisle ? `Aisle: ${selectedAisle.name}, ${expanded ? 'collapse' : 'expand'}` : `Select aisle, ${expanded ? 'collapse' : 'expand'}`}
+      >
         <Text
           style={[styles.pickerText, !selectedAisle && styles.placeholder]}
           numberOfLines={1}
@@ -79,6 +84,9 @@ export function AislePicker({ aisles, selectedAisleId, onSelect, onCreateAisle }
               key={aisle.id}
               style={[styles.option, aisle.id === selectedAisleId && styles.optionActive]}
               onPress={() => { onSelect(aisle); setExpanded(false); setCreatingNew(false); }}
+              accessibilityRole="button"
+              accessibilityLabel={aisle.name}
+              accessibilityState={{ selected: aisle.id === selectedAisleId }}
             >
               <Text
                 style={[
@@ -102,14 +110,27 @@ export function AislePicker({ aisles, selectedAisleId, onSelect, onCreateAisle }
                 onChangeText={(t) => { setNewName(t); setCreateError(null); }}
                 onSubmitEditing={commitCreate}
                 returnKeyType="done"
+                accessibilityLabel="New aisle name"
               />
-              <Pressable onPress={commitCreate} disabled={creating} style={styles.createBtn}>
+              <Pressable
+                onPress={commitCreate}
+                disabled={creating}
+                style={styles.createBtn}
+                accessibilityRole="button"
+                accessibilityLabel={creating ? 'Adding aisle' : 'Add aisle'}
+                accessibilityState={{ disabled: creating }}
+              >
                 <Text style={styles.createBtnText}>{creating ? '…' : 'Add'}</Text>
               </Pressable>
               {createError !== null && <Text style={styles.errorText}>{createError}</Text>}
             </View>
           ) : (
-            <Pressable style={styles.newAisleRow} onPress={startCreating}>
+            <Pressable
+              style={styles.newAisleRow}
+              onPress={startCreating}
+              accessibilityRole="button"
+              accessibilityLabel="Add new aisle"
+            >
               <Text style={styles.newAisleText}>+ New aisle</Text>
             </Pressable>
           )}

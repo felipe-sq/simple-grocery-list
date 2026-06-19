@@ -17,6 +17,8 @@ export function SuggestionsDropdown({ suggestions, onSelect }: Props) {
           key={`${s.store_id}-${s.aisle_id}-${s.name}`}
           style={[styles.row, index < suggestions.length - 1 && styles.rowBorder]}
           onPress={() => onSelect(s)}
+          accessibilityRole="button"
+          accessibilityLabel={`${s.name}, ${s.store_name}${s.aisle_name ? `, ${s.aisle_name}` : ''}`}
         >
           <Text style={styles.icon}>🕐</Text>
           <View style={styles.content}>

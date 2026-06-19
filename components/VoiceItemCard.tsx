@@ -113,6 +113,7 @@ export function VoiceItemCard({ item, storeName, aisles, onUpdate, onCreateAisle
           style={styles.doneBtn}
           onPress={() => setEditing(false)}
           accessibilityRole="button"
+          accessibilityLabel="Done editing"
         >
           <Text style={styles.doneBtnText}>Done</Text>
         </Pressable>
@@ -128,6 +129,8 @@ export function VoiceItemCard({ item, storeName, aisles, onUpdate, onCreateAisle
           onPress={() => onUpdate(item.key, { checked: !item.checked, error: null })}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: item.checked }}
+          accessibilityLabel={`${item.name}, ${item.checked ? 'checked' : 'unchecked'}`}
+          hitSlop={11}
         >
           {item.checked && <Text style={styles.checkmark}>✓</Text>}
         </Pressable>
@@ -175,7 +178,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },
-  cardDimmed: { opacity: 0.5 },
+  cardDimmed: { opacity: 0.65 },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   checkbox: {
     width: 22,

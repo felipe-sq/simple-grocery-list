@@ -213,7 +213,13 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
     >
       <View style={styles.header}>
         <Text style={styles.title}>Add Item</Text>
-        <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn}>
+        <Pressable
+          onPress={handleClose}
+          hitSlop={12}
+          style={styles.closeBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Close add item"
+        >
           <Text style={styles.closeIcon}>✕</Text>
         </Pressable>
       </View>
@@ -232,6 +238,7 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
             value={name}
             onChangeText={(t) => { setName(t); setNameError(null); setSubmitError(null); setScanNotice(null); }}
             returnKeyType="next"
+            accessibilityLabel="Item name"
           />
           <Pressable
             style={styles.scanBtn}
@@ -258,7 +265,12 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
         <View style={styles.row}>
           <View style={styles.halfField}>
             <Text style={styles.label}>Store</Text>
-            <Pressable style={styles.picker} onPress={() => setStoreOpen((v) => !v)}>
+            <Pressable
+              style={styles.picker}
+              onPress={() => setStoreOpen((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel={`Store: ${selectedStoreName}, ${storeOpen ? 'collapse' : 'expand'}`}
+            >
               <Text style={styles.pickerText} numberOfLines={1}>{selectedStoreName}</Text>
               <Text style={styles.chevron}>▾</Text>
             </Pressable>
@@ -269,6 +281,9 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
                     key={s.id}
                     style={[styles.storeOption, s.id === selectedStoreId && styles.storeOptionActive]}
                     onPress={() => { setSelectedStoreId(s.id); setSelectedAisle(null); setNameError(null); setStoreOpen(false); }}
+                    accessibilityRole="button"
+                    accessibilityLabel={s.name}
+                    accessibilityState={{ selected: s.id === selectedStoreId }}
                   >
                     <Text style={[styles.storeOptionText, s.id === selectedStoreId && styles.storeOptionTextActive]}>
                       {s.name}
@@ -301,6 +316,7 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
               onChangeText={setQty}
               keyboardType="numeric"
               returnKeyType="next"
+              accessibilityLabel="Quantity"
             />
           </View>
           <View style={styles.unitField}>
@@ -312,6 +328,7 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
               value={unit}
               onChangeText={setUnit}
               returnKeyType="next"
+              accessibilityLabel="Unit"
             />
           </View>
         </View>
@@ -323,6 +340,7 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
           value={notes}
           onChangeText={setNotes}
           multiline
+          accessibilityLabel="Notes, optional"
         />
 
         {submitError !== null && <Text style={styles.errorText}>{submitError}</Text>}
@@ -331,6 +349,9 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
           style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
           onPress={handleSubmit}
           disabled={!canSubmit || submitting}
+          accessibilityRole="button"
+          accessibilityLabel={submitting ? 'Adding item' : 'Add Item'}
+          accessibilityState={{ disabled: !canSubmit || submitting }}
         >
           <Text style={styles.submitLabel}>{submitting ? 'Adding…' : 'Add Item'}</Text>
         </Pressable>

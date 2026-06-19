@@ -54,7 +54,13 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
   return (
     <ScaleDecorator>
       <View style={[styles.row, isActive && styles.rowActive]}>
-        <Pressable onLongPress={drag} style={styles.dragHandle} hitSlop={8}>
+        <Pressable
+          onLongPress={drag}
+          style={styles.dragHandle}
+          hitSlop={9}
+          accessibilityRole="button"
+          accessibilityLabel={`Drag to reorder ${aisle.name}`}
+        >
           <Text style={styles.dragIcon}>≡</Text>
         </Pressable>
 
@@ -72,6 +78,7 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
               onBlur={commitEdit}
               returnKeyType="done"
               selectTextOnFocus
+              accessibilityLabel="Aisle name"
             />
             {error !== null && <Text style={styles.errorText}>{error}</Text>}
             {onDeleteRequest !== undefined && (
@@ -90,7 +97,13 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
           <Text style={styles.aisleName}>{aisle.name}</Text>
         )}
 
-        <Pressable onPress={startEdit} style={styles.editButton} hitSlop={8}>
+        <Pressable
+          onPress={startEdit}
+          style={styles.editButton}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit aisle ${aisle.name}`}
+        >
           <Text style={styles.editIcon}>✎</Text>
         </Pressable>
       </View>

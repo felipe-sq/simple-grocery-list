@@ -68,6 +68,7 @@ export function ListeningOverlay({
               style={styles.primaryBtn}
               onPress={handleRetry}
               accessibilityRole="button"
+              accessibilityLabel="Grant microphone permission"
             >
               <Text style={styles.primaryBtnText}>Grant Permission</Text>
             </Pressable>
@@ -76,6 +77,7 @@ export function ListeningOverlay({
               style={styles.primaryBtn}
               onPress={() => Linking.openSettings()}
               accessibilityRole="button"
+              accessibilityLabel="Open Settings to enable microphone"
             >
               <Text style={styles.primaryBtnText}>Open Settings</Text>
             </Pressable>
@@ -84,6 +86,7 @@ export function ListeningOverlay({
             style={styles.ghostBtn}
             onPress={handleCancel}
             accessibilityRole="button"
+            accessibilityLabel="Cancel voice input"
           >
             <Text style={styles.ghostBtnText}>Cancel</Text>
           </Pressable>
@@ -105,6 +108,7 @@ export function ListeningOverlay({
             style={styles.primaryBtn}
             onPress={handleRetry}
             accessibilityRole="button"
+            accessibilityLabel="Retry voice recognition"
           >
             <Text style={styles.primaryBtnText}>Retry</Text>
           </Pressable>
@@ -112,6 +116,7 @@ export function ListeningOverlay({
             style={styles.ghostBtn}
             onPress={() => { reset(); onTypeInstead(); }}
             accessibilityRole="button"
+            accessibilityLabel="Type item name instead"
           >
             <Text style={styles.ghostBtnText}>Type Instead</Text>
           </Pressable>

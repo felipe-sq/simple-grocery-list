@@ -79,6 +79,9 @@ export function SuggestionCard({ suggestion, alreadyOnList, onAdd, onDismiss }: 
             style={[styles.addButton, adding && styles.addButtonBusy]}
             onPress={handleAdd}
             disabled={adding}
+            accessibilityRole="button"
+            accessibilityLabel={adding ? 'Adding suggestion' : `Add ${suggestion.item_name}`}
+            accessibilityState={{ disabled: adding }}
           >
             <Text style={styles.addButtonText}>{adding ? '...' : '+ Add'}</Text>
           </Pressable>
@@ -88,7 +91,8 @@ export function SuggestionCard({ suggestion, alreadyOnList, onAdd, onDismiss }: 
           style={styles.dismissButton}
           onPress={handleDismiss}
           hitSlop={8}
-          accessibilityLabel="Dismiss suggestion"
+          accessibilityRole="button"
+          accessibilityLabel={`Dismiss ${suggestion.item_name}`}
         >
           <Text style={styles.dismissText}>✕</Text>
         </Pressable>
@@ -132,7 +136,7 @@ const styles = StyleSheet.create({
   },
   dateLine: {
     fontSize: 12,
-    color: '#9ca3af',
+    color: '#6b7280',
   },
   actions: {
     flexDirection: 'row',
@@ -165,9 +169,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   dismissButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#f3f4f6',
     alignItems: 'center',
     justifyContent: 'center',

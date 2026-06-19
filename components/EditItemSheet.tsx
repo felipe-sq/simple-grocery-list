@@ -146,7 +146,13 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
     >
       <View style={styles.header}>
         <Text style={styles.title}>Edit Item</Text>
-        <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn}>
+        <Pressable
+          onPress={handleClose}
+          hitSlop={12}
+          style={styles.closeBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Close edit item"
+        >
           <Text style={styles.closeIcon}>✕</Text>
         </Pressable>
       </View>
@@ -167,13 +173,19 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
             setSubmitError(null);
           }}
           returnKeyType="next"
+          accessibilityLabel="Item name"
         />
         {nameError !== null && <Text style={styles.errorText}>{nameError}</Text>}
 
         <View style={styles.row}>
           <View style={styles.halfField}>
             <Text style={styles.label}>Store</Text>
-            <Pressable style={styles.picker} onPress={() => setStoreOpen((v) => !v)}>
+            <Pressable
+              style={styles.picker}
+              onPress={() => setStoreOpen((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel={`Store: ${selectedStoreName}, ${storeOpen ? 'collapse' : 'expand'}`}
+            >
               <Text style={styles.pickerText} numberOfLines={1}>{selectedStoreName}</Text>
               <Text style={styles.chevron}>▾</Text>
             </Pressable>
@@ -188,6 +200,9 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
                       setNameError(null);
                       setStoreOpen(false);
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={s.name}
+                    accessibilityState={{ selected: s.id === form.selectedStoreId }}
                   >
                     <Text style={[styles.storeOptionText, s.id === form.selectedStoreId && styles.storeOptionTextActive]}>
                       {s.name}
@@ -220,6 +235,7 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
               onChangeText={(t) => setForm((prev) => ({ ...prev, qty: t }))}
               keyboardType="numeric"
               returnKeyType="next"
+              accessibilityLabel="Quantity"
             />
           </View>
           <View style={styles.unitField}>
@@ -231,6 +247,7 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
               value={form.unit}
               onChangeText={(t) => setForm((prev) => ({ ...prev, unit: t }))}
               returnKeyType="next"
+              accessibilityLabel="Unit"
             />
           </View>
         </View>
@@ -242,6 +259,7 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
           value={form.notes}
           onChangeText={(t) => setForm((prev) => ({ ...prev, notes: t }))}
           multiline
+          accessibilityLabel="Notes, optional"
         />
 
         {submitError !== null && <Text style={styles.errorText}>{submitError}</Text>}
@@ -250,6 +268,9 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
           style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
           onPress={handleSubmit}
           disabled={!canSubmit || submitting}
+          accessibilityRole="button"
+          accessibilityLabel={submitting ? 'Saving changes' : 'Save Changes'}
+          accessibilityState={{ disabled: !canSubmit || submitting }}
         >
           <Text style={styles.submitLabel}>{submitting ? 'Saving…' : 'Save Changes'}</Text>
         </Pressable>

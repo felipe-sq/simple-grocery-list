@@ -30,21 +30,41 @@ export function ItemContextMenu({ item, onEdit, onMoveAisle, onDelete, onClose }
 
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
-      <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable
+        style={styles.backdrop}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss menu"
+      >
         <Pressable style={styles.menu} onPress={() => {}}>
           <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
 
           {!confirming ? (
             <>
-              <Pressable style={styles.option} onPress={onEdit}>
+              <Pressable
+                style={styles.option}
+                onPress={onEdit}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit ${item.name}`}
+              >
                 <Text style={styles.optionText}>Edit item</Text>
               </Pressable>
               <View style={styles.divider} />
-              <Pressable style={styles.option} onPress={onMoveAisle}>
+              <Pressable
+                style={styles.option}
+                onPress={onMoveAisle}
+                accessibilityRole="button"
+                accessibilityLabel={`Move ${item.name} to different aisle`}
+              >
                 <Text style={styles.optionText}>Move to different aisle</Text>
               </Pressable>
               <View style={styles.divider} />
-              <Pressable style={styles.option} onPress={() => setConfirming(true)}>
+              <Pressable
+                style={styles.option}
+                onPress={() => setConfirming(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${item.name} from list`}
+              >
                 <Text style={[styles.optionText, styles.destructive]}>Delete from list</Text>
               </Pressable>
             </>
@@ -59,6 +79,9 @@ export function ItemContextMenu({ item, onEdit, onMoveAisle, onDelete, onClose }
                   style={styles.cancelBtn}
                   onPress={() => { setConfirming(false); setDeleteError(null); }}
                   disabled={deleting}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel delete"
+                  accessibilityState={{ disabled: deleting }}
                 >
                   <Text style={styles.cancelBtnText}>Cancel</Text>
                 </Pressable>
@@ -66,6 +89,9 @@ export function ItemContextMenu({ item, onEdit, onMoveAisle, onDelete, onClose }
                   style={[styles.deleteBtn, deleting && styles.deleteBtnDisabled]}
                   onPress={handleConfirmDelete}
                   disabled={deleting}
+                  accessibilityRole="button"
+                  accessibilityLabel={deleting ? 'Deleting' : `Confirm delete ${item.name}`}
+                  accessibilityState={{ disabled: deleting }}
                 >
                   <Text style={styles.deleteBtnText}>{deleting ? '…' : 'Delete'}</Text>
                 </Pressable>
