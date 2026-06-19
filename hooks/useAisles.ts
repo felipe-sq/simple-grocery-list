@@ -56,7 +56,7 @@ export function useAisles(
 
     return () => {
       cancelled = true;
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [storeId, householdId]);
 

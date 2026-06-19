@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useHousehold } from '@/hooks/useHousehold';
+import { HouseholdProvider } from '@/lib/HouseholdProvider';
 import { PENDING_JOIN_TOKEN_KEY } from '@/app/(onboarding)/join';
 import { supabase } from '@/lib/supabase';
 
@@ -29,7 +30,11 @@ export default function RootLayout() {
     if (fontError) throw fontError;
   }, [fontError]);
 
-  return <RootLayoutNav fontsLoaded={fontsLoaded} />;
+  return (
+    <HouseholdProvider>
+      <RootLayoutNav fontsLoaded={fontsLoaded} />
+    </HouseholdProvider>
+  );
 }
 
 function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {

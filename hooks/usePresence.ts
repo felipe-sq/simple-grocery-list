@@ -66,7 +66,7 @@ export function usePresence(
     });
 
     return () => {
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
       appStateSub.remove();
       channelRef.current = null;
     };

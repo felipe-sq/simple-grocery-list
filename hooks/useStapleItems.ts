@@ -57,7 +57,7 @@ export function useStapleItems(householdId: string | null): {
 
     return () => {
       cancelled = true;
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [householdId]);
 

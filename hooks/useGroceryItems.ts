@@ -158,7 +158,7 @@ export function useGroceryItems(
 
     return () => {
       cancelled = true;
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [storeId, householdId, flushQueue]);
 

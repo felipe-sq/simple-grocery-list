@@ -56,7 +56,7 @@ export default function StoresSettingsScreen() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'aisles', filter: `household_id=eq.${householdId}` }, fetchAll)
       .subscribe();
 
-    return () => { channel.unsubscribe(); };
+    return () => { supabase.removeChannel(channel); };
   }, [householdId]);
 
   async function handleStoreRename(storeId: string, name: string): Promise<string | null> {

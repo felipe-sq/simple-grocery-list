@@ -57,7 +57,7 @@ export function useStores(): { stores: Store[]; loading: boolean } {
 
     return () => {
       cancelled = true;
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [householdId, householdLoading]);
 
