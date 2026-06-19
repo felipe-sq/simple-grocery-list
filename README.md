@@ -9,14 +9,14 @@ A real-time collaborative grocery list for a household of 3–4 people. Organize
 
 ## Project Docs
 
-| File | Purpose |
-|---|---|
-| `CLAUDE.md` | Instructions Claude Code reads at the start of every session |
-| `docs/prd.md` | Full product requirements, data schema, rules engine spec |
-| `docs/ux-flows.md` | Wireframes and edge cases for all 8 user flows |
-| `docs/tasks.md` | All 27 tickets organized by milestone |
-| `docs/ticket-prompts.md` | Ready-to-paste Claude Code prompts for every ticket |
-| `docs/workflow.md` | How to run Claude Code sessions and review completed work |
+| File                     | Purpose                                                      |
+| ------------------------ | ------------------------------------------------------------ |
+| `CLAUDE.md`              | Instructions Claude Code reads at the start of every session |
+| `docs/prd.md`            | Full product requirements, data schema, rules engine spec    |
+| `docs/ux-flows.md`       | Wireframes and edge cases for all 8 user flows               |
+| `docs/tasks.md`          | All 27 tickets organized by milestone                        |
+| `docs/ticket-prompts.md` | Ready-to-paste Claude Code prompts for every ticket          |
+| `docs/workflow.md`       | How to run Claude Code sessions and review completed work    |
 
 ---
 
@@ -49,11 +49,13 @@ npm install
 ### 3. Set up environment variables
 
 Copy the example env file and fill in your Supabase credentials:
+
 ```bash
 cp .env.example .env.local
 ```
 
 Edit `.env.local`:
+
 ```
 EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -65,10 +67,10 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ```bash
 # iOS simulator
-expo start --ios
+npx expo start --ios
 
 # Web browser
-expo start --web
+npx expo start --web
 ```
 
 ---
@@ -110,6 +112,7 @@ bash check.sh
 ```
 
 This checks:
+
 1. TypeScript — no type errors
 2. ESLint — no lint errors
 3. Expo web build — compiles without errors
@@ -124,14 +127,14 @@ All checks must pass before starting the next ticket.
 
 ## Milestones
 
-| Milestone | Tickets | What gets built |
-|---|---|---|
-| 0 — Scaffolding | T-001 – T-006 | Expo setup, Supabase, auth, households |
-| 1 — Core List | T-007 – T-013 | Stores, aisles, add items, check off, End Trip |
-| 2 — Staples & Suggestions | T-014 – T-018 | Staples CRUD, copy flow, rules engine |
-| 3 — Voice & Barcode | T-019 – T-020 | Voice input and barcode scanning |
-| 4 — Presence & Polish | T-021 – T-025 | Presence, offline queue, iOS + web builds |
-| 5 — Hardening | T-026 – T-027 | Edge case audit, accessibility |
+| Milestone                 | Tickets       | What gets built                                |
+| ------------------------- | ------------- | ---------------------------------------------- |
+| 0 — Scaffolding           | T-001 – T-006 | Expo setup, Supabase, auth, households         |
+| 1 — Core List             | T-007 – T-013 | Stores, aisles, add items, check off, End Trip |
+| 2 — Staples & Suggestions | T-014 – T-018 | Staples CRUD, copy flow, rules engine          |
+| 3 — Voice & Barcode       | T-019 – T-020 | Voice input and barcode scanning               |
+| 4 — Presence & Polish     | T-021 – T-025 | Presence, offline queue, iOS + web builds      |
+| 5 — Hardening             | T-026 – T-027 | Edge case audit, accessibility                 |
 
 ---
 
@@ -216,8 +219,8 @@ expo export --platform web
 
 ## Environment Variables Reference
 
-| Variable | Used in | Description |
-|---|---|---|
-| `EXPO_PUBLIC_SUPABASE_URL` | Client app | Supabase project URL |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Client app | Supabase anon/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Edge Functions only | Never use in app code |
+| Variable                        | Used in             | Description              |
+| ------------------------------- | ------------------- | ------------------------ |
+| `EXPO_PUBLIC_SUPABASE_URL`      | Client app          | Supabase project URL     |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Client app          | Supabase anon/public key |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Edge Functions only | Never use in app code    |
