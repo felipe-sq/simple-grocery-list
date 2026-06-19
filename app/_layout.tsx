@@ -5,6 +5,7 @@ import * as Linking from 'expo-linking';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -32,11 +33,13 @@ export default function RootLayout() {
   }, [fontError]);
 
   return (
-    <HouseholdProvider>
-      <StoresProvider>
-        <RootLayoutNav fontsLoaded={fontsLoaded} />
-      </StoresProvider>
-    </HouseholdProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <HouseholdProvider>
+        <StoresProvider>
+          <RootLayoutNav fontsLoaded={fontsLoaded} />
+        </StoresProvider>
+      </HouseholdProvider>
+    </GestureHandlerRootView>
   );
 }
 

@@ -1,9 +1,9 @@
 import type { Session } from '@supabase/supabase-js';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { usePathname, useRouter } from 'expo-router';
+import { usePathname } from 'expo-router';
 import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
 import { useEffect, useRef } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -32,7 +32,6 @@ export default function AppLayout() {
   const { householdId } = useHousehold();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const router = useRouter();
   const { isOnline } = useNetworkStatus();
 
   const userId = session?.user.id ?? null;
@@ -120,12 +119,7 @@ export default function AppLayout() {
           </Text>
         </TabTrigger>
 
-        <Pressable
-          style={styles.tabItem}
-          onPress={() => router.push('/settings')}
-          accessibilityLabel="Settings"
-          accessibilityRole="button"
-        >
+        <TabTrigger name="settings" href="/settings" style={styles.tabItem}>
           <Text
             style={[
               styles.tabLabel,
@@ -134,7 +128,7 @@ export default function AppLayout() {
           >
             ⚙
           </Text>
-        </Pressable>
+        </TabTrigger>
       </TabList>
     </Tabs>
     </BottomSheetModalProvider>
