@@ -41,14 +41,16 @@ export default function CreateHousehold() {
       return;
     }
 
-    const { data: household, error: householdError } = await supabase
-      .from('households')
-      .insert({ name: name.trim() })
-      .select('id')
-      .single();
-    const householdRow = household as { id: string } | null;
+    // Generate the UUID client-side so we don't need INSERT ... RETURNING.
+    // The households SELECT policy requires membership, which doesn't exist yet
+    // at insert time — so RETURNING would be blocked by RLS.
+    const newHouseholdId = crypto.randomUUID();
 
-    if (householdError || !householdRow) {
+    const { error: householdError } = await supabase
+      .from('households')
+      .insert({ id: newHouseholdId, name: name.trim() });
+
+    if (householdError) {
       setLoading(false);
       Alert.alert('Error', 'Failed to create household. Please try again.');
       return;
@@ -56,7 +58,7 @@ export default function CreateHousehold() {
 
     const { error: memberError } = await supabase
       .from('household_members')
-      .insert({ household_id: householdRow.id, user_id: session.user.id });
+      .insert({ household_id: newHouseholdId, user_id: session.user.id });
 
     if (memberError) {
       setLoading(false);
