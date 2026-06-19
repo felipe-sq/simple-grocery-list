@@ -20,6 +20,27 @@ export default function CreateHousehold() {
 
     setLoading(true);
 
+    // Ensure the profile row exists — household_members has a FK to profiles(id)
+    // and the upsert in the root layout is fire-and-forget (may not have settled yet).
+    await supabase.from('profiles').upsert(
+      { id: session.user.id, name: session.user.email?.split('@')[0] ?? 'User' },
+      { onConflict: 'id', ignoreDuplicates: true },
+    );
+
+    // If the user already has a household (e.g. from a previous attempt that
+    // succeeded at the DB level but didn't navigate cleanly), skip creation.
+    const { data: existingRows } = await supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('user_id', session.user.id)
+      .limit(1);
+    const existingMember = (existingRows as { household_id: string }[] | null)?.[0];
+    if (existingMember) {
+      setLoading(false);
+      router.replace('/(app)');
+      return;
+    }
+
     const { data: household, error: householdError } = await supabase
       .from('households')
       .insert({ name: name.trim() })
