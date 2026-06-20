@@ -12,6 +12,7 @@ import {
 
 import { StoreSection } from '@/components/StoreSection';
 import { useHousehold } from '@/hooks/useHousehold';
+import { useStores } from '@/hooks/useStores';
 import { supabase } from '@/lib/supabase';
 import type { Aisle, Store } from '@/types';
 
@@ -19,6 +20,7 @@ const MAX_STORES = 3;
 
 export default function StoresSettingsScreen() {
   const { householdId } = useHousehold();
+  const { createStore } = useStores();
   const [stores, setStores] = useState<Store[]>([]);
   const [storeAisles, setStoreAisles] = useState<Record<string, Aisle[]>>({});
   const [loading, setLoading] = useState(true);
@@ -178,9 +180,14 @@ export default function StoresSettingsScreen() {
       setAddStoreError(`You already have a store called "${trimmed}".`);
       return;
     }
-    const sortOrder = stores.length > 0 ? Math.max(...stores.map((s) => s.sort_order)) + 10 : 0;
-    const { error } = await supabase.from('stores').insert({ household_id: householdId, name: trimmed, sort_order: sortOrder });
-    if (error) { setAddStoreError(error.message); } else { setAddingStore(false); setNewStoreName(''); }
+    const { store, error } = await createStore(trimmed);
+    if (error) {
+      setAddStoreError(error);
+    } else if (store) {
+      setStores((prev) => [...prev, store]);
+      setAddingStore(false);
+      setNewStoreName('');
+    }
   }
 
   if (loading) {

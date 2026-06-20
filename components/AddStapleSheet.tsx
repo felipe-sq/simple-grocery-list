@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AislePicker } from '@/components/AislePicker';
 import { SheetModal, SheetScrollView } from '@/components/SheetModal';
@@ -41,6 +41,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
   const [unit, setUnit] = useState(() => stapleToEdit?.default_unit ?? '');
   const [nameError, setNameError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [storeOpen, setStoreOpen] = useState(false);
   const [deleteConfirming, setDeleteConfirming] = useState(false);
@@ -56,6 +57,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
     setName(s.name);
     setNameError(null);
     setSubmitError(null);
+    setDuplicateWarning(null);
   }
 
   async function handleSubmit() {
@@ -66,6 +68,13 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
     setSubmitError(null);
 
     if (!isOnline) { await performSave(trimmedName); return; }
+
+    // If already warned about a duplicate, the second tap proceeds directly
+    if (duplicateWarning) {
+      setDuplicateWarning(null);
+      await performSave(trimmedName);
+      return;
+    }
 
     setSubmitting(true);
 
@@ -84,14 +93,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
     setSubmitting(false);
 
     if (dupeRows && dupeRows.length > 0) {
-      Alert.alert(
-        'Duplicate staple',
-        `You already have "${trimmedName}" in your staples. Save as a duplicate?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Save Anyway', onPress: () => performSave(trimmedName) },
-        ],
-      );
+      setDuplicateWarning(`"${trimmedName}" is already in your staples. Tap Save Staple again to add anyway.`);
       return;
     }
 
@@ -180,11 +182,12 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
           placeholder="e.g. Oat milk"
           placeholderTextColor="#9ca3af"
           value={name}
-          onChangeText={(t) => { setName(t); setNameError(null); setSubmitError(null); }}
+          onChangeText={(t) => { setName(t); setNameError(null); setSubmitError(null); setDuplicateWarning(null); }}
           returnKeyType="next"
           accessibilityLabel="Item name"
         />
         {nameError !== null && <Text style={styles.errorText}>{nameError}</Text>}
+        {duplicateWarning !== null && <Text style={styles.warningText}>{duplicateWarning}</Text>}
         <SuggestionsDropdown suggestions={suggestions} onSelect={handleSuggestionSelect} />
 
         <View style={styles.row}>
@@ -389,6 +392,7 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { backgroundColor: '#93c5fd' },
   submitLabel: { color: '#fff', fontSize: 16, fontWeight: '600' },
   errorText: { fontSize: 13, color: '#dc2626', marginTop: 8 },
+  warningText: { fontSize: 13, color: '#d97706', marginTop: 8 },
   deleteSection: { marginTop: 8 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#e5e7eb', marginVertical: 16 },
   deleteBtn: { paddingVertical: 12, alignItems: 'center' },

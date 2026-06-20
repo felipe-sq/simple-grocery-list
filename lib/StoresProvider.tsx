@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { supabase } from '@/lib/supabase';
 import { useHousehold } from '@/hooks/useHousehold';
@@ -7,17 +7,21 @@ import type { Store } from '@/types';
 interface StoresContextValue {
   stores: Store[];
   loading: boolean;
+  createStore: (name: string) => Promise<{ store: Store | null; error: string | null }>;
 }
 
 const StoresContext = createContext<StoresContextValue>({
   stores: [],
   loading: true,
+  createStore: async () => ({ store: null, error: 'Not initialized' }),
 });
 
 export function StoresProvider({ children }: { children: ReactNode }) {
   const { householdId, loading: householdLoading } = useHousehold();
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
+  const storesRef = useRef<Store[]>([]);
+  useEffect(() => { storesRef.current = stores; }, [stores]);
 
   useEffect(() => {
     if (householdLoading) return;
@@ -70,8 +74,26 @@ export function StoresProvider({ children }: { children: ReactNode }) {
     };
   }, [householdId, householdLoading]);
 
+  const createStore = useCallback(
+    async (name: string): Promise<{ store: Store | null; error: string | null }> => {
+      if (!householdId) return { store: null, error: 'Not authenticated' };
+      const existing = storesRef.current;
+      const sortOrder = existing.length > 0 ? Math.max(...existing.map((s) => s.sort_order)) + 10 : 0;
+      const { data, error } = await supabase
+        .from('stores')
+        .insert({ household_id: householdId, name, sort_order: sortOrder })
+        .select()
+        .single();
+      if (error) return { store: null, error: error.message };
+      const newStore = data as Store;
+      setStores((prev) => [...prev, newStore]);
+      return { store: newStore, error: null };
+    },
+    [householdId],
+  );
+
   return (
-    <StoresContext.Provider value={{ stores, loading }}>
+    <StoresContext.Provider value={{ stores, loading, createStore }}>
       {children}
     </StoresContext.Provider>
   );
