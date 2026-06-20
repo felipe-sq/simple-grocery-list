@@ -74,20 +74,22 @@ export default function AppLayout() {
       <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
         {stores.map((store) => {
           const storeHref = `/store/${store.id}`;
+          const isStoreActive = pathname === storeHref;
           const present = presenceByStore.get(store.id) ?? [];
           return (
             <Pressable
               key={store.id}
               onPress={() => router.push({ pathname: '/store/[storeId]', params: { storeId: store.id } })}
-              style={styles.tabItem}
+              style={[styles.tabItem, isStoreActive && styles.tabItemActive]}
               accessibilityRole="tab"
             >
               <View style={styles.tabLabelRow}>
-                {store.color !== null && (
-                  <View style={[styles.storeDot, { backgroundColor: store.color }]} />
-                )}
                 <Text
-                  style={[styles.tabLabel, pathname === storeHref && styles.tabLabelActive]}
+                  style={[
+                    styles.tabLabel,
+                    isStoreActive && styles.tabLabelActive,
+                    store.color !== null && { color: store.color },
+                  ]}
                   numberOfLines={1}
                 >
                   {store.name}
@@ -109,7 +111,7 @@ export default function AppLayout() {
 
         <Pressable
           onPress={() => router.push('/staples')}
-          style={styles.tabItem}
+          style={[styles.tabItem, pathname === '/staples' && styles.tabItemActive]}
           accessibilityRole="tab"
         >
           <Text style={[styles.tabLabel, pathname === '/staples' && styles.tabLabelActive]}>
@@ -119,7 +121,7 @@ export default function AppLayout() {
 
         <Pressable
           onPress={() => router.push('/settings')}
-          style={styles.tabItem}
+          style={[styles.tabItem, pathname.startsWith('/settings') && styles.tabItemActive]}
           accessibilityRole="tab"
         >
           <Text
@@ -156,19 +158,20 @@ const styles = StyleSheet.create({
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingTop: 8,
+    paddingBottom: 10,
     paddingHorizontal: 4,
     minWidth: 0,
+    borderTopWidth: 3,
+    borderTopColor: 'transparent',
+  },
+  tabItemActive: {
+    borderTopColor: '#f59e0b',
   },
   tabLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-  },
-  storeDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
   },
   tabLabel: {
     fontSize: 11,
@@ -178,7 +181,7 @@ const styles = StyleSheet.create({
   },
   tabLabelActive: {
     color: '#2563eb',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   offlineBadge: {
     backgroundColor: '#f59e0b',
