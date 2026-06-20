@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 import type { StapleItemWithDetails } from '@/types';
@@ -6,9 +6,11 @@ import type { StapleItemWithDetails } from '@/types';
 export function useStapleItems(householdId: string | null): {
   items: StapleItemWithDetails[];
   loading: boolean;
+  refetch: () => Promise<void>;
 } {
   const [items, setItems] = useState<StapleItemWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     if (!householdId) {
@@ -39,6 +41,7 @@ export function useStapleItems(householdId: string | null): {
       setLoading(false);
     }
 
+    fetchRef.current = fetchStaples;
     fetchStaples();
 
     const channel = supabase
@@ -57,9 +60,12 @@ export function useStapleItems(householdId: string | null): {
 
     return () => {
       cancelled = true;
+      fetchRef.current = async () => {};
       supabase.removeChannel(channel);
     };
   }, [householdId]);
 
-  return { items, loading };
+  const refetch = useCallback(() => fetchRef.current(), []);
+
+  return { items, loading, refetch };
 }

@@ -55,7 +55,7 @@ type PendingCopy = {
 
 export default function StaplesScreen() {
   const { householdId } = useHousehold();
-  const { items, loading } = useStapleItems(householdId);
+  const { items, loading, refetch } = useStapleItems(householdId);
   const { stores } = useStores();
   const { checkDuplicates, findAisleMismatches, copyItems } = useCopyStaplesToList(householdId);
 
@@ -64,6 +64,7 @@ export default function StaplesScreen() {
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set());
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editingStaple, setEditingStaple] = useState<StapleItemWithDetails | null>(null);
+  const [addSheetKey, setAddSheetKey] = useState(0);
   const sheetOpenRef = useRef(false);
 
   // Selection mode
@@ -114,6 +115,7 @@ export default function StaplesScreen() {
     if (sheetOpenRef.current) return;
     sheetOpenRef.current = true;
     setEditingStaple(null);
+    setAddSheetKey((k) => k + 1);
     setSheetVisible(true);
   }, []);
 
@@ -423,14 +425,24 @@ export default function StaplesScreen() {
               >
                 <Text style={styles.toolbarSelectBtn}>Select</Text>
               </Pressable>
-              <Pressable
-                onPress={() => setSearchVisible(true)}
-                hitSlop={8}
-                accessibilityLabel="Search staples"
-                accessibilityRole="button"
-              >
-                <Text style={styles.toolbarSearchBtn}>Search 🔍</Text>
-              </Pressable>
+              <View style={styles.toolbarRight}>
+                <Pressable
+                  onPress={openAddSheet}
+                  hitSlop={8}
+                  accessibilityLabel="Add staple"
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.toolbarAddStapleBtn}>＋ Add</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setSearchVisible(true)}
+                  hitSlop={8}
+                  accessibilityLabel="Search staples"
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.toolbarSearchBtn}>🔍</Text>
+                </Pressable>
+              </View>
             </View>
           )}
 
@@ -470,12 +482,13 @@ export default function StaplesScreen() {
 
       {householdId !== null && !selectionMode && (
         <AddStapleSheet
-          key={editingStaple?.id ?? 'add'}
+          key={editingStaple?.id ?? `add-${addSheetKey}`}
           visible={sheetVisible}
           onClose={handleSheetClose}
           householdId={householdId}
           allStores={stores}
           stapleToEdit={editingStaple}
+          onSaved={refetch}
         />
       )}
 
@@ -543,7 +556,9 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e5e7eb',
   },
   toolbarSelectBtn: { fontSize: 14, color: '#2563eb', fontWeight: '500' },
-  toolbarSearchBtn: { fontSize: 14, color: '#2563eb', fontWeight: '500', marginLeft: 'auto' },
+  toolbarRight: { flexDirection: 'row', alignItems: 'center', gap: 16, marginLeft: 'auto' },
+  toolbarAddStapleBtn: { fontSize: 14, color: '#2563eb', fontWeight: '600' },
+  toolbarSearchBtn: { fontSize: 14, color: '#2563eb', fontWeight: '500' },
   toolbarCancel: { fontSize: 14, color: '#6b7280', fontWeight: '500' },
   toolbarCount: { flex: 1, textAlign: 'center', fontSize: 14, fontWeight: '600', color: '#111827' },
   toolbarAddBtn: { fontSize: 14, color: '#2563eb', fontWeight: '600' },

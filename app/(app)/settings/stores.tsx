@@ -64,18 +64,34 @@ export default function StoresSettingsScreen() {
 
   async function handleStoreRename(storeId: string, name: string): Promise<string | null> {
     const { error } = await supabase.from('stores').update({ name }).eq('id', storeId);
+    if (!error) setStores((prev) => prev.map((s) => s.id === storeId ? { ...s, name } : s));
     return error?.message ?? null;
   }
 
   async function handleAisleAdd(storeId: string, name: string): Promise<string | null> {
     const existing = storeAisles[storeId] ?? [];
     const sortOrder = existing.length > 0 ? Math.max(...existing.map((a) => a.sort_order)) + 10 : 0;
-    const { error } = await supabase.from('aisles').insert({ household_id: householdId, store_id: storeId, name, sort_order: sortOrder });
-    return error?.message ?? null;
+    const { data, error } = await supabase
+      .from('aisles')
+      .insert({ household_id: householdId, store_id: storeId, name, sort_order: sortOrder })
+      .select()
+      .single();
+    if (error) return error.message;
+    if (data) setStoreAisles((prev) => ({ ...prev, [storeId]: [...(prev[storeId] ?? []), data as Aisle] }));
+    return null;
   }
 
   async function handleAisleRename(aisleId: string, name: string): Promise<string | null> {
     const { error } = await supabase.from('aisles').update({ name }).eq('id', aisleId);
+    if (!error) {
+      setStoreAisles((prev) => {
+        const next: Record<string, Aisle[]> = {};
+        for (const sid of Object.keys(prev)) {
+          next[sid] = prev[sid].map((a) => (a.id === aisleId ? { ...a, name } : a));
+        }
+        return next;
+      });
+    }
     return error?.message ?? null;
   }
 
@@ -94,6 +110,13 @@ export default function StoresSettingsScreen() {
         .eq('household_id', householdId);
     }
     await supabase.from('aisles').delete().eq('id', aisleId);
+    setStoreAisles((prev) => {
+      const next: Record<string, Aisle[]> = {};
+      for (const sid of Object.keys(prev)) {
+        next[sid] = prev[sid].filter((a) => a.id !== aisleId);
+      }
+      return next;
+    });
   }
 
   function handleAisleDeleteRequest(storeId: string, aisleId: string): void {

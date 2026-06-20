@@ -17,9 +17,10 @@ type Props = {
   householdId: string;
   allStores: Store[];
   stapleToEdit: StapleItemWithDetails | null;
+  onSaved?: () => void;
 };
 
-export function AddStapleSheet({ visible, onClose, householdId, allStores, stapleToEdit }: Props) {
+export function AddStapleSheet({ visible, onClose, householdId, allStores, stapleToEdit, onSaved }: Props) {
   const isEdit = stapleToEdit !== null;
 
   const [name, setName] = useState(() => stapleToEdit?.name ?? '');
@@ -148,7 +149,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
     }
 
     setSubmitting(false);
-    if (error) { setSubmitError(error); } else { onClose(); }
+    if (error) { setSubmitError(error); } else { onSaved?.(); onClose(); }
   }
 
   async function handleDelete() {
@@ -156,6 +157,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
     setDeleting(true);
     await supabase.from('staple_items').delete().eq('id', stapleToEdit.id);
     setDeleting(false);
+    onSaved?.();
     onClose();
   }
 

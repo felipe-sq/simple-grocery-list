@@ -117,7 +117,8 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
               ) : (
                 <Pressable
                   style={styles.deleteBtn}
-                  onPress={() => { deletingRef.current = true; setDeleteConfirming(true); }}
+                  onPressIn={() => { deletingRef.current = true; }}
+                  onPress={() => setDeleteConfirming(true)}
                   hitSlop={8}
                   accessibilityRole="button"
                   accessibilityLabel={`Delete aisle ${aisle.name}`}
