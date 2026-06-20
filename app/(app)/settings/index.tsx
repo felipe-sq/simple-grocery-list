@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -14,6 +14,14 @@ export default function SettingsScreen() {
   const router = useRouter();
   const [householdName, setHouseholdName] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function showToast(msg: string) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastMsg(msg);
+    toastTimer.current = setTimeout(() => setToastMsg(null), 3000);
+  }
 
   useEffect(() => {
     if (!householdId) return;
@@ -53,10 +61,7 @@ export default function SettingsScreen() {
 
     const url = Linking.createURL('join', { queryParams: { token } });
     await Clipboard.setStringAsync(url);
-    Alert.alert(
-      'Link copied!',
-      `Invite link copied to clipboard. Share it with a household member.\n\n${url}`,
-    );
+    showToast('Invite link copied to clipboard!');
   }
 
   async function handleSignOut() {
@@ -64,7 +69,8 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.root}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
       {householdName !== null && (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>HOUSEHOLD</Text>
@@ -135,15 +141,24 @@ export default function SettingsScreen() {
           <Text style={styles.signOutText}>Sign Out</Text>
         </Pressable>
       </View>
+      </ScrollView>
+      {toastMsg !== null && (
+        <View style={styles.toast} pointerEvents="none">
+          <Text style={styles.toastText}>{toastMsg}</Text>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: '#f9fafb',
+  },
+  scrollContent: {
     padding: 20,
+    paddingBottom: 80,
   },
   section: {
     backgroundColor: '#fff',
@@ -193,5 +208,21 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     fontWeight: '600',
     fontSize: 15,
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 24,
+    left: 20,
+    right: 20,
+    backgroundColor: '#111827',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  toastText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
