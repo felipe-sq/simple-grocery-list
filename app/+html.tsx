@@ -13,6 +13,14 @@ export default function Root({ children }: { children: ReactNode }) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
+        {/* PWA manifest */}
+        <link rel="manifest" href="/manifest.json" />
+
+        {/* iOS standalone mode — Safari ignores the manifest display field */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Grocery List" />
+
         {/*
           Disable body scrolling on web. This makes ScrollView components work closer to how they do on native.
           However, body scrolling is often nice to have for mobile web. If you want to enable it, remove this line.
