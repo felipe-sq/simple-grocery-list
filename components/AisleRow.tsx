@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScaleDecorator } from 'react-native-draggable-flatlist';
 
 import type { Aisle } from '@/types';
@@ -17,16 +17,22 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(aisle.name);
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const submittingRef = useRef(false);
+  const deletingRef = useRef(false);
 
   function startEdit() {
+    deletingRef.current = false;
     setName(aisle.name);
     setError(null);
+    setDeleteConfirming(false);
     setEditing(true);
     setTimeout(() => inputRef.current?.focus(), 50);
   }
 
   async function commitEdit() {
+    if (submittingRef.current || deletingRef.current) return;
     const trimmed = name.trim();
     if (!trimmed || trimmed === aisle.name) {
       setName(aisle.name);
@@ -42,18 +48,20 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
       setError(`This store already has an aisle called "${trimmed}".`);
       return;
     }
+    submittingRef.current = true;
     const err = await onSaveName(aisle.id, trimmed);
+    submittingRef.current = false;
     if (err) {
       setError(err);
     } else {
       setEditing(false);
+      setDeleteConfirming(false);
       setError(null);
     }
   }
 
-  return (
-    <ScaleDecorator>
-      <View style={[styles.row, isActive && styles.rowActive]}>
+  const inner = (
+    <View style={[styles.row, isActive && styles.rowActive]}>
         <Pressable
           onLongPress={drag}
           style={styles.dragHandle}
@@ -82,15 +90,41 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
             />
             {error !== null && <Text style={styles.errorText}>{error}</Text>}
             {onDeleteRequest !== undefined && (
-              <Pressable
-                style={styles.deleteBtn}
-                onPress={() => { setEditing(false); onDeleteRequest(aisle.id); }}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={`Delete aisle ${aisle.name}`}
-              >
-                <Text style={styles.deleteBtnText}>Delete aisle</Text>
-              </Pressable>
+              deleteConfirming ? (
+                <View style={styles.deleteConfirmRow}>
+                  <Text style={styles.deleteConfirmLabel}>Delete "{aisle.name}"?</Text>
+                  <View style={styles.deleteConfirmBtns}>
+                    <Pressable
+                      style={styles.deleteCancelBtn}
+                      onPress={() => { deletingRef.current = false; setDeleteConfirming(false); }}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancel delete"
+                    >
+                      <Text style={styles.deleteCancelText}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.deleteConfirmBtn}
+                      onPress={() => { setEditing(false); setDeleteConfirming(false); deletingRef.current = false; onDeleteRequest(aisle.id); }}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Confirm delete aisle ${aisle.name}`}
+                    >
+                      <Text style={styles.deleteConfirmText}>Delete</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <Pressable
+                  style={styles.deleteBtn}
+                  onPress={() => { deletingRef.current = true; setDeleteConfirming(true); }}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete aisle ${aisle.name}`}
+                >
+                  <Text style={styles.deleteBtnText}>Delete aisle</Text>
+                </Pressable>
+              )
             )}
           </View>
         ) : (
@@ -107,8 +141,8 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
           <Text style={styles.editIcon}>✎</Text>
         </Pressable>
       </View>
-    </ScaleDecorator>
   );
+  return Platform.OS === 'web' ? inner : <ScaleDecorator>{inner}</ScaleDecorator>;
 }
 
 const styles = StyleSheet.create({
@@ -160,6 +194,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#dc2626',
   },
+  deleteConfirmRow: { marginTop: 10 },
+  deleteConfirmLabel: { fontSize: 13, color: '#374151', marginBottom: 8 },
+  deleteConfirmBtns: { flexDirection: 'row', gap: 8 },
+  deleteCancelBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 6,
+    paddingVertical: 6,
+    alignItems: 'center' as const,
+  },
+  deleteCancelText: { fontSize: 13, color: '#374151' },
+  deleteConfirmBtn: {
+    flex: 1,
+    backgroundColor: '#dc2626',
+    borderRadius: 6,
+    paddingVertical: 6,
+    alignItems: 'center' as const,
+  },
+  deleteConfirmText: { fontSize: 13, color: '#fff', fontWeight: '600' as const },
   aisleName: {
     flex: 1,
     fontSize: 15,

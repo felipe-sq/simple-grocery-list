@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ScaleDecorator } from 'react-native-draggable-flatlist';
 
 import type { GroceryItemWithAisle } from '@/types';
@@ -21,14 +21,13 @@ export function GroceryItemRow({ item, onToggle, onLongPress, drag, isActive }: 
 
   const label = quantityLabel ? `${item.name} (${quantityLabel})` : item.name;
 
-  return (
-    <ScaleDecorator>
+  const inner = (
       <Pressable
         style={[styles.row, item.checked && styles.rowChecked, isActive && styles.rowActive]}
         onLongPress={onLongPress ? () => onLongPress(item) : undefined}
         delayLongPress={400}
         accessibilityLabel={`${item.name}, long press for options`}
-        accessibilityRole="button"
+        accessibilityRole="none"
       >
         <Pressable
           style={({ pressed }) => [
@@ -64,8 +63,8 @@ export function GroceryItemRow({ item, onToggle, onLongPress, drag, isActive }: 
           </Pressable>
         )}
       </Pressable>
-    </ScaleDecorator>
   );
+  return Platform.OS === 'web' ? inner : <ScaleDecorator>{inner}</ScaleDecorator>;
 }
 
 const styles = StyleSheet.create({

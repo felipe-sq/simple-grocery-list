@@ -64,6 +64,7 @@ export default function StaplesScreen() {
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(new Set());
   const [sheetVisible, setSheetVisible] = useState(false);
   const [editingStaple, setEditingStaple] = useState<StapleItemWithDetails | null>(null);
+  const sheetOpenRef = useRef(false);
 
   // Selection mode
   const [selectionMode, setSelectionMode] = useState(false);
@@ -109,18 +110,21 @@ export default function StaplesScreen() {
     setSearchQuery('');
   }
 
-  function openAddSheet() {
-    console.log('[Staples] openAddSheet called, householdId:', householdId, 'sheetVisible before:', sheetVisible);
+  const openAddSheet = useCallback(() => {
+    if (sheetOpenRef.current) return;
+    sheetOpenRef.current = true;
     setEditingStaple(null);
     setSheetVisible(true);
-  }
+  }, []);
 
   function handleItemPress(item: StapleItemWithDetails) {
+    sheetOpenRef.current = true;
     setEditingStaple(item);
     setSheetVisible(true);
   }
 
   function handleSheetClose() {
+    sheetOpenRef.current = false;
     setSheetVisible(false);
     setEditingStaple(null);
   }
@@ -309,6 +313,20 @@ export default function StaplesScreen() {
     [executeCopy],
   );
 
+  const headerRight = useMemo(
+    () => selectionMode ? undefined : () => (
+      <Pressable
+        onPress={openAddSheet}
+        hitSlop={12}
+        accessibilityLabel="Add staple"
+        accessibilityRole="button"
+      >
+        <Text style={styles.headerAddBtn}>＋</Text>
+      </Pressable>
+    ),
+    [selectionMode, openAddSheet],
+  );
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -316,17 +334,6 @@ export default function StaplesScreen() {
       </View>
     );
   }
-
-  const headerRight = selectionMode ? undefined : () => (
-    <Pressable
-      onPress={openAddSheet}
-      hitSlop={12}
-      accessibilityLabel="Add staple"
-      accessibilityRole="button"
-    >
-      <Text style={styles.headerAddBtn}>＋</Text>
-    </Pressable>
-  );
 
   return (
     <>

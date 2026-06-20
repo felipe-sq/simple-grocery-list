@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
 import DraggableFlatList, { DragEndParams } from 'react-native-draggable-flatlist';
 
 import { AddAisleRow } from '@/components/AddAisleRow';
@@ -37,22 +37,40 @@ export function StoreSection({
     <View style={styles.block}>
       <StoreHeader store={store} allStores={allStores} onRename={onStoreRename} />
 
-      <DraggableFlatList
-        data={aisles}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        renderItem={({ item, drag, isActive }) => (
-          <AisleRow
-            aisle={item}
-            storeAisles={aisles}
-            drag={drag}
-            isActive={isActive}
-            onSaveName={onAisleRename}
-            onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
-          />
-        )}
-        onDragEnd={handleDragEnd}
-      />
+      {Platform.OS === 'web' ? (
+        <FlatList
+          data={aisles}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+          renderItem={({ item }) => (
+            <AisleRow
+              aisle={item}
+              storeAisles={aisles}
+              drag={() => {}}
+              isActive={false}
+              onSaveName={onAisleRename}
+              onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
+            />
+          )}
+        />
+      ) : (
+        <DraggableFlatList
+          data={aisles}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+          renderItem={({ item, drag, isActive }) => (
+            <AisleRow
+              aisle={item}
+              storeAisles={aisles}
+              drag={drag}
+              isActive={isActive}
+              onSaveName={onAisleRename}
+              onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
+            />
+          )}
+          onDragEnd={handleDragEnd}
+        />
+      )}
 
       {aisles.length < MAX_AISLES ? (
         <AddAisleRow

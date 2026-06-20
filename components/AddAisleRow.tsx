@@ -13,6 +13,7 @@ export function AddAisleRow({ existingAisles, onAdd }: Props) {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
+  const submittingRef = useRef(false);
 
   function start() {
     setName('');
@@ -22,6 +23,7 @@ export function AddAisleRow({ existingAisles, onAdd }: Props) {
   }
 
   async function commit() {
+    if (submittingRef.current) return;
     const trimmed = name.trim();
     if (!trimmed) {
       setActive(false);
@@ -35,7 +37,9 @@ export function AddAisleRow({ existingAisles, onAdd }: Props) {
       setError(`This store already has an aisle called "${trimmed}".`);
       return;
     }
+    submittingRef.current = true;
     const err = await onAdd(trimmed);
+    submittingRef.current = false;
     if (err) {
       setError(err);
     } else {

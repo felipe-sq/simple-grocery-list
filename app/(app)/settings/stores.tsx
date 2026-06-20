@@ -29,8 +29,9 @@ export default function StoresSettingsScreen() {
 
   useEffect(() => {
     if (!householdId) {
-      setLoading(false);
-      return;
+      let active = true;
+      queueMicrotask(() => { if (active) setLoading(false); });
+      return () => { active = false; };
     }
 
     async function fetchAll() {
@@ -108,7 +109,13 @@ export default function StoresSettingsScreen() {
 
       const itemCount = count ?? 0;
 
-      if (itemCount > 0 && otherAisles.length === 0) {
+      if (itemCount === 0) {
+        // No items — AisleRow already confirmed inline, just delete
+        await executeAisleDelete(aisleId, null);
+        return;
+      }
+
+      if (otherAisles.length === 0) {
         Alert.alert(
           'Cannot delete',
           `Move items out of "${aisleName}" first, or delete the items before removing this aisle.`,
@@ -117,32 +124,18 @@ export default function StoresSettingsScreen() {
         return;
       }
 
-      if (itemCount > 0) {
-        Alert.alert(
-          `"${aisleName}" has ${itemCount} item${itemCount !== 1 ? 's' : ''}. Where should they go?`,
-          undefined,
-          [
-            ...otherAisles.map((target) => ({
-              text: target.name,
-              onPress: () => executeAisleDelete(aisleId, target.id),
-            })),
-            { text: 'Cancel', style: 'cancel' as const },
-          ],
-        );
-      } else {
-        Alert.alert(
-          `Delete "${aisleName}"?`,
-          undefined,
-          [
-            { text: 'Cancel', style: 'cancel' as const },
-            {
-              text: 'Delete',
-              style: 'destructive' as const,
-              onPress: () => executeAisleDelete(aisleId, null),
-            },
-          ],
-        );
-      }
+      // Items exist and there are other aisles to move them to
+      Alert.alert(
+        `"${aisleName}" has ${itemCount} item${itemCount !== 1 ? 's' : ''}. Where should they go?`,
+        undefined,
+        [
+          ...otherAisles.map((target) => ({
+            text: target.name,
+            onPress: () => executeAisleDelete(aisleId, target.id),
+          })),
+          { text: 'Cancel', style: 'cancel' as const },
+        ],
+      );
     }
 
     deleteWithCount();

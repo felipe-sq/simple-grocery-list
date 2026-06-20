@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 
 import { AislePicker } from '@/components/AislePicker';
+import { SheetModal, SheetScrollView } from '@/components/SheetModal';
 import { useAisles } from '@/hooks/useAisles';
 import { supabase } from '@/lib/supabase';
 import type { Aisle, EditItemInput, GroceryItemWithAisle, Store } from '@/types';
@@ -36,11 +36,6 @@ type Props = {
 };
 
 export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose }: Props) {
-  const modalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ['85%'], []);
-
-  // Lazy initializer: runs once on mount. Parent supplies a changing `key` so
-  // the component remounts (and re-initializes) whenever `item` switches.
   const [form, setForm] = useState<FormValues>(() =>
     item ? formFromItem(item) : { name: '', selectedStoreId: '', selectedAisle: null, qty: '', unit: '', notes: '' },
   );
@@ -50,15 +45,6 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
   const [storeOpen, setStoreOpen] = useState(false);
 
   const { aisles, createAisle } = useAisles(form.selectedStoreId, householdId);
-
-  // Only controls the bottom sheet — no setState here.
-  useEffect(() => {
-    if (item) {
-      modalRef.current?.present();
-    } else {
-      modalRef.current?.dismiss();
-    }
-  }, [item]);
 
   const isDirty = item !== null && (
     form.name.trim() !== item.name ||
@@ -88,7 +74,6 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
     setNameError(null);
     setSubmitError(null);
 
-    // Duplicate check — exclude self
     const { data: dupeRows } = await supabase
       .from('grocery_items')
       .select('id')
@@ -117,61 +102,28 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
     });
 
     setSubmitting(false);
-    if (result.error) {
-      setSubmitError(result.error);
-    } else {
-      onClose();
-    }
+    if (result.error) { setSubmitError(result.error); } else { onClose(); }
   }
-
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="none" />
-    ),
-    [],
-  );
 
   const selectedStoreName = allStores.find((s) => s.id === form.selectedStoreId)?.name ?? '';
   const canSubmit = form.name.trim().length > 0 && form.selectedAisle !== null;
 
   return (
-    <BottomSheetModal
-      ref={modalRef}
-      snapPoints={snapPoints}
-      enablePanDownToClose={false}
-      backdropComponent={renderBackdrop}
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
-      onDismiss={onClose}
-    >
+    <SheetModal visible={item !== null} onClose={handleClose}>
       <View style={styles.header}>
         <Text style={styles.title}>Edit Item</Text>
-        <Pressable
-          onPress={handleClose}
-          hitSlop={12}
-          style={styles.closeBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Close edit item"
-        >
+        <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close edit item">
           <Text style={styles.closeIcon}>✕</Text>
         </Pressable>
       </View>
 
-      <BottomSheetScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <SheetScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.label}>Item name</Text>
         <TextInput
           style={styles.input}
           placeholderTextColor="#9ca3af"
           value={form.name}
-          onChangeText={(t) => {
-            setForm((prev) => ({ ...prev, name: t }));
-            setNameError(null);
-            setSubmitError(null);
-          }}
+          onChangeText={(t) => { setForm((prev) => ({ ...prev, name: t })); setNameError(null); setSubmitError(null); }}
           returnKeyType="next"
           accessibilityLabel="Item name"
         />
@@ -195,11 +147,7 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
                   <Pressable
                     key={s.id}
                     style={[styles.storeOption, s.id === form.selectedStoreId && styles.storeOptionActive]}
-                    onPress={() => {
-                      setForm((prev) => ({ ...prev, selectedStoreId: s.id, selectedAisle: null }));
-                      setNameError(null);
-                      setStoreOpen(false);
-                    }}
+                    onPress={() => { setForm((prev) => ({ ...prev, selectedStoreId: s.id, selectedAisle: null })); setNameError(null); setStoreOpen(false); }}
                     accessibilityRole="button"
                     accessibilityLabel={s.name}
                     accessibilityState={{ selected: s.id === form.selectedStoreId }}
@@ -274,8 +222,8 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
         >
           <Text style={styles.submitLabel}>{submitting ? 'Saving…' : 'Save Changes'}</Text>
         </Pressable>
-      </BottomSheetScrollView>
-    </BottomSheetModal>
+      </SheetScrollView>
+    </SheetModal>
   );
 }
 
@@ -292,7 +240,6 @@ const styles = StyleSheet.create({
   title: { flex: 1, fontSize: 17, fontWeight: '600', color: '#111827' },
   closeBtn: { padding: 4 },
   closeIcon: { fontSize: 18, color: '#6b7280' },
-  scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   label: { fontSize: 13, fontWeight: '500', color: '#6b7280', marginBottom: 6, marginTop: 16 },
   input: {

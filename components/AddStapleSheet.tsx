@@ -1,13 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-  type BottomSheetBackdropProps,
-} from '@gorhom/bottom-sheet';
 
 import { AislePicker } from '@/components/AislePicker';
+import { SheetModal, SheetScrollView } from '@/components/SheetModal';
 import { SuggestionsDropdown } from '@/components/SuggestionsDropdown';
 import { useAisles } from '@/hooks/useAisles';
 import { useItemSuggestions } from '@/hooks/useItemSuggestions';
@@ -26,8 +21,6 @@ type Props = {
 
 export function AddStapleSheet({ visible, onClose, householdId, allStores, stapleToEdit }: Props) {
   const isEdit = stapleToEdit !== null;
-  const modalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ['85%'], []);
 
   const [name, setName] = useState(() => stapleToEdit?.name ?? '');
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(
@@ -56,18 +49,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
   const { suggestions } = useItemSuggestions(name, householdId);
   const { isOnline } = useNetworkStatus();
 
-  useEffect(() => {
-    console.log('[AddStapleSheet] visible changed:', visible, 'modalRef:', !!modalRef.current);
-    if (visible) {
-      modalRef.current?.present();
-    } else {
-      modalRef.current?.dismiss();
-    }
-  }, [visible]);
-
-  const handleClose = useCallback(() => {
-    onClose();
-  }, [onClose]);
+  const handleClose = useCallback(() => { onClose(); }, [onClose]);
 
   function handleSuggestionSelect(s: SuggestionResult) {
     setName(s.name);
@@ -77,21 +59,12 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
 
   async function handleSubmit() {
     const trimmedName = name.trim();
-
-    // EC7-2: name required
-    if (!trimmedName) {
-      setNameError('Item name is required.');
-      return;
-    }
+    if (!trimmedName) { setNameError('Item name is required.'); return; }
 
     setNameError(null);
     setSubmitError(null);
 
-    // EC7-4: duplicate name warning (warn but allow) — skip check when offline
-    if (!isOnline) {
-      await performSave(trimmedName);
-      return;
-    }
+    if (!isOnline) { await performSave(trimmedName); return; }
 
     setSubmitting(true);
 
@@ -126,7 +99,6 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
 
   async function performSave(trimmedName: string) {
     setSubmitting(true);
-
     let error: string | null = null;
 
     if (isEdit && stapleToEdit) {
@@ -142,7 +114,6 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
         .eq('id', stapleToEdit.id);
       error = updateError?.message ?? null;
     } else if (!isOnline) {
-      // Offline: queue the add; item will appear after sync
       await enqueue({
         type: 'add_staple',
         householdId,
@@ -177,14 +148,9 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
     }
 
     setSubmitting(false);
-    if (error) {
-      setSubmitError(error);
-    } else {
-      onClose();
-    }
+    if (error) { setSubmitError(error); } else { onClose(); }
   }
 
-  // EC7-5: delete only the staple_item row; previously copied grocery_items are unaffected
   async function handleDelete() {
     if (!stapleToEdit) return;
     setDeleting(true);
@@ -193,26 +159,11 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
     onClose();
   }
 
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="none" />
-    ),
-    [],
-  );
-
   const selectedStoreName = allStores.find((s) => s.id === selectedStoreId)?.name ?? '';
   const canSubmit = name.trim().length > 0;
 
   return (
-    <BottomSheetModal
-      ref={modalRef}
-      snapPoints={snapPoints}
-      enablePanDownToClose={false}
-      backdropComponent={renderBackdrop}
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
-      onDismiss={onClose}
-    >
+    <SheetModal visible={visible} onClose={handleClose}>
       <View style={styles.header}>
         <Text style={styles.title}>{isEdit ? 'Edit Staple' : 'Add Staple'}</Text>
         <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn} accessibilityLabel="Close" accessibilityRole="button">
@@ -220,22 +171,14 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
         </Pressable>
       </View>
 
-      <BottomSheetScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <SheetScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.label}>Item name</Text>
         <TextInput
           style={styles.input}
           placeholder="e.g. Oat milk"
           placeholderTextColor="#9ca3af"
           value={name}
-          onChangeText={(t) => {
-            setName(t);
-            setNameError(null);
-            setSubmitError(null);
-          }}
+          onChangeText={(t) => { setName(t); setNameError(null); setSubmitError(null); }}
           returnKeyType="next"
           accessibilityLabel="Item name"
         />
@@ -251,10 +194,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
               accessibilityLabel="Select default store"
               accessibilityRole="button"
             >
-              <Text
-                style={[styles.pickerText, !selectedStoreId && styles.placeholder]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.pickerText, !selectedStoreId && styles.placeholder]} numberOfLines={1}>
                 {selectedStoreId ? selectedStoreName : 'Select store'}
               </Text>
               <Text style={styles.chevron}>▾</Text>
@@ -263,11 +203,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
               <View style={styles.storeDropdown}>
                 <Pressable
                   style={styles.storeOption}
-                  onPress={() => {
-                    setSelectedStoreId(null);
-                    setSelectedAisle(null);
-                    setStoreOpen(false);
-                  }}
+                  onPress={() => { setSelectedStoreId(null); setSelectedAisle(null); setStoreOpen(false); }}
                 >
                   <Text style={[styles.storeOptionText, styles.placeholder]}>None</Text>
                 </Pressable>
@@ -275,18 +211,9 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
                   <Pressable
                     key={s.id}
                     style={[styles.storeOption, s.id === selectedStoreId && styles.storeOptionActive]}
-                    onPress={() => {
-                      setSelectedStoreId(s.id);
-                      setSelectedAisle(null);
-                      setStoreOpen(false);
-                    }}
+                    onPress={() => { setSelectedStoreId(s.id); setSelectedAisle(null); setStoreOpen(false); }}
                   >
-                    <Text
-                      style={[
-                        styles.storeOptionText,
-                        s.id === selectedStoreId && styles.storeOptionTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.storeOptionText, s.id === selectedStoreId && styles.storeOptionTextActive]}>
                       {s.name}
                     </Text>
                   </Pressable>
@@ -297,21 +224,16 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
 
           <View style={styles.halfField}>
             <Text style={styles.label}>Default Aisle</Text>
-            {/* EC7-3: aisle is optional; disabled until a store is chosen */}
             {selectedStoreId ? (
               <AislePicker
                 aisles={aisles}
                 selectedAisleId={selectedAisle?.id ?? null}
-                onSelect={(aisle) =>
-                  setSelectedAisle({ id: aisle.id, name: aisle.name, sort_order: aisle.sort_order })
-                }
+                onSelect={(aisle) => setSelectedAisle({ id: aisle.id, name: aisle.name, sort_order: aisle.sort_order })}
                 onCreateAisle={createAisle}
               />
             ) : (
               <View style={[styles.picker, styles.pickerDisabled]}>
-                <Text style={[styles.pickerText, styles.placeholder]} numberOfLines={1}>
-                  Select store first
-                </Text>
+                <Text style={[styles.pickerText, styles.placeholder]} numberOfLines={1}>Select store first</Text>
               </View>
             )}
           </View>
@@ -357,15 +279,12 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
           <Text style={styles.submitLabel}>{submitting ? 'Saving…' : 'Save Staple'}</Text>
         </Pressable>
 
-        {/* EC7-1: inline delete confirm — no modal */}
         {isEdit && (
           <View style={styles.deleteSection}>
             <View style={styles.divider} />
             {deleteConfirming ? (
               <View style={styles.deleteConfirm}>
-                <Text style={styles.deleteConfirmText}>
-                  Delete {stapleToEdit?.name ?? ''} from staples?
-                </Text>
+                <Text style={styles.deleteConfirmText}>Delete {stapleToEdit?.name ?? ''} from staples?</Text>
                 <View style={styles.deleteConfirmBtns}>
                   <Pressable
                     style={styles.deleteConfirmCancelBtn}
@@ -382,9 +301,7 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
                     accessibilityLabel={`Delete ${stapleToEdit?.name ?? ''} from staples`}
                     accessibilityRole="button"
                   >
-                    <Text style={styles.deleteConfirmDeleteText}>
-                      {deleting ? 'Deleting…' : 'Delete'}
-                    </Text>
+                    <Text style={styles.deleteConfirmDeleteText}>{deleting ? 'Deleting…' : 'Delete'}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -400,8 +317,8 @@ export function AddStapleSheet({ visible, onClose, householdId, allStores, stapl
             )}
           </View>
         )}
-      </BottomSheetScrollView>
-    </BottomSheetModal>
+      </SheetScrollView>
+    </SheetModal>
   );
 }
 
@@ -418,7 +335,6 @@ const styles = StyleSheet.create({
   title: { flex: 1, fontSize: 17, fontWeight: '600', color: '#111827' },
   closeBtn: { padding: 4 },
   closeIcon: { fontSize: 18, color: '#6b7280' },
-  scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   label: { fontSize: 13, fontWeight: '500', color: '#6b7280', marginBottom: 6, marginTop: 16 },
   input: {
@@ -472,20 +388,11 @@ const styles = StyleSheet.create({
   submitLabel: { color: '#fff', fontSize: 16, fontWeight: '600' },
   errorText: { fontSize: 13, color: '#dc2626', marginTop: 8 },
   deleteSection: { marginTop: 8 },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#e5e7eb',
-    marginVertical: 16,
-  },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#e5e7eb', marginVertical: 16 },
   deleteBtn: { paddingVertical: 12, alignItems: 'center' },
   deleteBtnText: { fontSize: 15, color: '#dc2626' },
   deleteConfirm: { paddingVertical: 8 },
-  deleteConfirmText: {
-    fontSize: 15,
-    color: '#374151',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
+  deleteConfirmText: { fontSize: 15, color: '#374151', textAlign: 'center', marginBottom: 16 },
   deleteConfirmBtns: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
   deleteConfirmCancelBtn: {
     borderWidth: 1,

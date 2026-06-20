@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NestableDraggableFlatList, RenderItemParams } from 'react-native-draggable-flatlist';
 
 import { GroceryItemRow } from '@/components/GroceryItemRow';
@@ -32,6 +32,17 @@ export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLon
     [onToggleItem, onLongPressItem],
   );
 
+  const renderWebItem = useCallback(
+    ({ item }: { item: GroceryItemWithAisle }) => (
+      <GroceryItemRow
+        item={item}
+        onToggle={() => onToggleItem(item.id)}
+        onLongPress={onLongPressItem}
+      />
+    ),
+    [onToggleItem, onLongPressItem],
+  );
+
   return (
     <View style={styles.section}>
       <Pressable
@@ -48,13 +59,22 @@ export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLon
       </Pressable>
 
       {!isCollapsed && (
-        <NestableDraggableFlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          onDragEnd={({ data }) => onReorderItems(aisle.id, data)}
-          scrollEnabled={false}
-        />
+        Platform.OS === 'web' ? (
+          <FlatList
+            data={items}
+            keyExtractor={(item) => item.id}
+            renderItem={renderWebItem}
+            scrollEnabled={false}
+          />
+        ) : (
+          <NestableDraggableFlatList
+            data={items}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            onDragEnd={({ data }) => onReorderItems(aisle.id, data)}
+            scrollEnabled={false}
+          />
+        )
       )}
     </View>
   );

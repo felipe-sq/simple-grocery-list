@@ -59,7 +59,7 @@ export function useAisles(
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [storeId, householdId]);
+  }, [storeId, householdId, instanceId]);
 
   const createAisle = useCallback(
     async (name: string): Promise<{ aisle: Aisle | null; error: string | null }> => {

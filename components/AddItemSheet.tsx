@@ -1,8 +1,8 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { BottomSheetModal, BottomSheetScrollView, BottomSheetBackdrop, type BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 
 import { AislePicker } from '@/components/AislePicker';
+import { SheetModal, SheetScrollView } from '@/components/SheetModal';
 import { SuggestionsDropdown } from '@/components/SuggestionsDropdown';
 import { useAisles } from '@/hooks/useAisles';
 import { useItemSuggestions } from '@/hooks/useItemSuggestions';
@@ -10,7 +10,6 @@ import { supabase } from '@/lib/supabase';
 import type { AddItemInput, Aisle, BarcodePrefill, Store, SuggestionResult } from '@/types';
 
 export type AddItemSheetHandle = {
-  // EC3-7: fills only the name from a barcode scan triggered inside the sheet
   setNameFromBarcode: (name: string | null, barcode: string, offline?: boolean) => void;
 };
 
@@ -29,9 +28,6 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
   { visible, onClose, store, allStores, householdId, onSubmit, barcodePrefill, onRequestBarcodeScanner },
   ref,
 ) {
-  const modalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ['85%'], []);
-
   const [name, setName] = useState('');
   const [selectedStoreId, setSelectedStoreId] = useState(store.id);
   const [selectedAisle, setSelectedAisle] = useState<Pick<Aisle, 'id' | 'name' | 'sort_order'> | null>(null);
@@ -49,7 +45,13 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
   const { aisles, createAisle } = useAisles(selectedStoreId, householdId);
   const { suggestions } = useItemSuggestions(name, householdId);
 
-  // EC3-7: imperative handle so parent can fill only the name after in-sheet scan
+  useEffect(() => {
+    if (selectedAisle !== null) return;
+    if (aisles.length === 1) {
+      setSelectedAisle({ id: aisles[0].id, name: aisles[0].name, sort_order: aisles[0].sort_order });
+    }
+  }, [aisles, selectedAisle]);
+
   useImperativeHandle(ref, () => ({
     setNameFromBarcode(scannedName, barcode, offline = false) {
       setBarcodeValue(barcode);
@@ -67,15 +69,12 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
     },
   }));
 
-  // Apply barcode prefill when it arrives (header 📷 button flow)
   const appliedPrefillRef = useRef<BarcodePrefill | null>(null);
   useEffect(() => {
     if (!barcodePrefill || barcodePrefill === appliedPrefillRef.current) return;
     appliedPrefillRef.current = barcodePrefill;
-
     setBarcodeValue(barcodePrefill.barcode);
     setFromHistory(barcodePrefill.fromHistory);
-
     if (barcodePrefill.offline) {
       setScanNotice("Can't look up this product offline.");
     } else if (barcodePrefill.name === null) {
@@ -85,21 +84,11 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
       setName(barcodePrefill.name);
       setScanNotice(null);
     }
-
-    // EC3-2: also fill store + aisle when available from history
     if (barcodePrefill.fromHistory) {
       if (barcodePrefill.historyStoreId) setSelectedStoreId(barcodePrefill.historyStoreId);
       if (barcodePrefill.historyAisle) setSelectedAisle(barcodePrefill.historyAisle);
     }
   }, [barcodePrefill]);
-
-  useEffect(() => {
-    if (visible) {
-      modalRef.current?.present();
-    } else {
-      modalRef.current?.dismiss();
-    }
-  }, [visible]);
 
   const isDirty =
     name.trim() !== '' || selectedAisle !== null || qty !== '' || unit !== '' || notes.trim() !== '';
@@ -122,16 +111,11 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
     appliedPrefillRef.current = null;
   }, [store.id]);
 
-  // EC1-7: confirm discard if form has content
   const handleClose = useCallback(() => {
     if (isDirtyRef.current) {
       Alert.alert('Discard this item?', undefined, [
         { text: 'Keep Editing', style: 'cancel' },
-        {
-          text: 'Discard',
-          style: 'destructive',
-          onPress: () => { resetForm(); onClose(); },
-        },
+        { text: 'Discard', style: 'destructive', onPress: () => { resetForm(); onClose(); } },
       ]);
     } else {
       onClose();
@@ -153,7 +137,6 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
     setNameError(null);
     setSubmitError(null);
 
-    // EC1-3: duplicate hard-block — UI check before DB write
     const { data: dupeRows } = await supabase
       .from('grocery_items')
       .select('id')
@@ -191,44 +174,19 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
     }
   }
 
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} pressBehavior="none" />
-    ),
-    [],
-  );
-
   const selectedStoreName = allStores.find((s) => s.id === selectedStoreId)?.name ?? '';
   const canSubmit = name.trim().length > 0 && selectedAisle !== null;
 
   return (
-    <BottomSheetModal
-      ref={modalRef}
-      snapPoints={snapPoints}
-      enablePanDownToClose={false}
-      backdropComponent={renderBackdrop}
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
-      onDismiss={onClose}
-    >
+    <SheetModal visible={visible} onClose={handleClose}>
       <View style={styles.header}>
         <Text style={styles.title}>Add Item</Text>
-        <Pressable
-          onPress={handleClose}
-          hitSlop={12}
-          style={styles.closeBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Close add item"
-        >
+        <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close add item">
           <Text style={styles.closeIcon}>✕</Text>
         </Pressable>
       </View>
 
-      <BottomSheetScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
+      <SheetScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.label}>Item name</Text>
         <View style={styles.nameRow}>
           <TextInput
@@ -240,25 +198,13 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
             returnKeyType="next"
             accessibilityLabel="Item name"
           />
-          <Pressable
-            style={styles.scanBtn}
-            onPress={onRequestBarcodeScanner}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Scan barcode"
-          >
+          <Pressable style={styles.scanBtn} onPress={onRequestBarcodeScanner} hitSlop={8} accessibilityRole="button" accessibilityLabel="Scan barcode">
             <Text style={styles.scanBtnIcon}>📷</Text>
           </Pressable>
         </View>
 
-        {/* EC3-2: "From your history" label */}
-        {fromHistory && (
-          <Text style={styles.fromHistoryLabel}>📋 From your history</Text>
-        )}
-        {/* EC3-1 / EC3-5 scan notices */}
-        {scanNotice !== null && (
-          <Text style={styles.scanNotice}>{scanNotice}</Text>
-        )}
+        {fromHistory && <Text style={styles.fromHistoryLabel}>📋 From your history</Text>}
+        {scanNotice !== null && <Text style={styles.scanNotice}>{scanNotice}</Text>}
         {nameError !== null && <Text style={styles.errorText}>{nameError}</Text>}
         <SuggestionsDropdown suggestions={suggestions} onSelect={handleSuggestionSelect} />
 
@@ -302,6 +248,9 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
               onSelect={(aisle) => setSelectedAisle({ id: aisle.id, name: aisle.name, sort_order: aisle.sort_order })}
               onCreateAisle={createAisle}
             />
+            {selectedAisle === null && aisles.length > 1 && (
+              <Text style={styles.aisleHint}>Select an aisle to continue</Text>
+            )}
           </View>
         </View>
 
@@ -355,8 +304,8 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
         >
           <Text style={styles.submitLabel}>{submitting ? 'Adding…' : 'Add Item'}</Text>
         </Pressable>
-      </BottomSheetScrollView>
-    </BottomSheetModal>
+      </SheetScrollView>
+    </SheetModal>
   );
 });
 
@@ -373,27 +322,14 @@ const styles = StyleSheet.create({
   title: { flex: 1, fontSize: 17, fontWeight: '600', color: '#111827' },
   closeBtn: { padding: 4 },
   closeIcon: { fontSize: 18, color: '#6b7280' },
-  scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   label: { fontSize: 13, fontWeight: '500', color: '#6b7280', marginBottom: 6, marginTop: 16 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nameInput: { flex: 1 },
-  scanBtn: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    marginTop: 0,
-  },
+  scanBtn: { paddingHorizontal: 4, paddingVertical: 2 },
   scanBtnIcon: { fontSize: 24 },
-  fromHistoryLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 6,
-  },
-  scanNotice: {
-    fontSize: 13,
-    color: '#d97706',
-    marginTop: 6,
-  },
+  fromHistoryLabel: { fontSize: 12, color: '#6b7280', marginTop: 6 },
+  scanNotice: { fontSize: 13, color: '#d97706', marginTop: 6 },
   input: {
     borderWidth: 1,
     borderColor: '#d1d5db',
@@ -443,4 +379,5 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { backgroundColor: '#93c5fd' },
   submitLabel: { color: '#fff', fontSize: 16, fontWeight: '600' },
   errorText: { fontSize: 13, color: '#dc2626', marginTop: 8 },
+  aisleHint: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
 });

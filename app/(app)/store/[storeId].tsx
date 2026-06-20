@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NestableScrollContainer } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -59,6 +59,7 @@ export default function StoreScreen() {
   const { lookupBarcode } = useBarcodeScanner(householdId);
 
   const [sheetVisible, setSheetVisible] = useState(false);
+  const sheetOpenRef = useRef(false);
   const [endTripModalVisible, setEndTripModalVisible] = useState(false);
   const [contextMenuItem, setContextMenuItem] = useState<GroceryItemWithAisle | null>(null);
   const [editingItem, setEditingItem] = useState<GroceryItemWithAisle | null>(null);
@@ -152,6 +153,18 @@ export default function StoreScreen() {
     });
   }
 
+  const openAddSheet = useCallback(() => {
+    if (sheetOpenRef.current) return;
+    sheetOpenRef.current = true;
+    setSheetVisible(true);
+  }, []);
+
+  const closeAddSheet = useCallback(() => {
+    sheetOpenRef.current = false;
+    setSheetVisible(false);
+    setBarcodePrefill(null);
+  }, []);
+
   // Opened from header 📷
   function handleHeaderScanPress() {
     setScanMode('header');
@@ -172,6 +185,7 @@ export default function StoreScreen() {
     if (scanMode === 'header') {
       // Open AddItemSheet pre-filled (EC3-1, EC3-2, EC3-5 notices shown inside sheet)
       setBarcodePrefill(result);
+      sheetOpenRef.current = true;
       setSheetVisible(true);
     } else {
       // EC3-7: sheet is already open — fill only the name, keep store/aisle as-is
@@ -221,7 +235,7 @@ export default function StoreScreen() {
                 <Text style={styles.headerIconBtn}>🎤</Text>
               </Pressable>
               <Pressable
-                onPress={() => setSheetVisible(true)}
+                onPress={openAddSheet}
                 hitSlop={12}
                 accessibilityLabel="Add item"
                 accessibilityRole="button"
@@ -244,7 +258,7 @@ export default function StoreScreen() {
           {currentStore !== undefined && householdId !== null && (
             <Pressable
               style={styles.emptyAddBtn}
-              onPress={() => setSheetVisible(true)}
+              onPress={openAddSheet}
               accessibilityLabel="Add item"
               accessibilityRole="button"
             >
@@ -254,25 +268,37 @@ export default function StoreScreen() {
         </View>
       ) : (
         <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
-          <NestableScrollContainer style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-            {aisleGroups.map((group) => (
-              <AisleSection
-                key={group.aisle.id}
-                group={group}
-                isCollapsed={isCollapsed(group)}
-                onToggle={() => handleToggle(group)}
-                onToggleItem={toggleItem}
-                onLongPressItem={handleLongPressItem}
-                onReorderItems={reorderItems}
-              />
-            ))}
-
-            {allChecked && (
-              <View style={styles.allCheckedBanner}>
-                <Text style={styles.allCheckedText}>Everything's in the cart 🛒</Text>
-              </View>
-            )}
-          </NestableScrollContainer>
+          {(() => {
+            const listContent = (
+              <>
+                {aisleGroups.map((group) => (
+                  <AisleSection
+                    key={group.aisle.id}
+                    group={group}
+                    isCollapsed={isCollapsed(group)}
+                    onToggle={() => handleToggle(group)}
+                    onToggleItem={toggleItem}
+                    onLongPressItem={handleLongPressItem}
+                    onReorderItems={reorderItems}
+                  />
+                ))}
+                {allChecked && (
+                  <View style={styles.allCheckedBanner}>
+                    <Text style={styles.allCheckedText}>Everything's in the cart 🛒</Text>
+                  </View>
+                )}
+              </>
+            );
+            return Platform.OS === 'web' ? (
+              <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+                {listContent}
+              </ScrollView>
+            ) : (
+              <NestableScrollContainer style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+                {listContent}
+              </NestableScrollContainer>
+            );
+          })()}
 
           <View style={styles.footer}>
             <Pressable
@@ -291,10 +317,7 @@ export default function StoreScreen() {
         <AddItemSheet
           ref={addItemSheetRef}
           visible={sheetVisible}
-          onClose={() => {
-            setSheetVisible(false);
-            setBarcodePrefill(null);
-          }}
+          onClose={closeAddSheet}
           store={currentStore}
           allStores={stores}
           householdId={householdId}

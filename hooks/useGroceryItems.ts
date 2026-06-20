@@ -296,6 +296,19 @@ export function useGroceryItems(
     const { error: itemErr } = await supabase.from('grocery_items').insert(groceryItem);
     if (itemErr) return { error: itemErr.message };
 
+    // Update state immediately; Realtime will re-fetch and produce the same result
+    if (data.storeId === storeId) {
+      const optimisticItem: GroceryItemWithAisle = {
+        ...groceryItem,
+        updated_at: now,
+        checked: false,
+        checked_at: null,
+        checked_by: null,
+        aisle: data.aisle,
+      };
+      setItems((prev) => (prev.some((i) => i.id === itemId) ? prev : [...prev, optimisticItem]));
+    }
+
     await supabase.from('item_history').insert(historyItem);
     return { error: null };
   }, [storeId]);
