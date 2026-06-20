@@ -3,6 +3,7 @@ export type Store = {
   household_id: string;
   name: string;
   sort_order: number;
+  color: string | null;
   created_at: string;
 };
 

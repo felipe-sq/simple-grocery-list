@@ -20,7 +20,7 @@ const MAX_STORES = 3;
 
 export default function StoresSettingsScreen() {
   const { householdId } = useHousehold();
-  const { createStore } = useStores();
+  const { createStore, updateStoreColor } = useStores();
   const [stores, setStores] = useState<Store[]>([]);
   const [storeAisles, setStoreAisles] = useState<Record<string, Aisle[]>>({});
   const [loading, setLoading] = useState(true);
@@ -68,6 +68,11 @@ export default function StoresSettingsScreen() {
     const { error } = await supabase.from('stores').update({ name }).eq('id', storeId);
     if (!error) setStores((prev) => prev.map((s) => s.id === storeId ? { ...s, name } : s));
     return error?.message ?? null;
+  }
+
+  async function handleStoreColorChange(storeId: string, color: string | null): Promise<void> {
+    const err = await updateStoreColor(storeId, color);
+    if (!err) setStores((prev) => prev.map((s) => s.id === storeId ? { ...s, color } : s));
   }
 
   async function handleAisleAdd(storeId: string, name: string): Promise<string | null> {
@@ -203,6 +208,7 @@ export default function StoresSettingsScreen() {
             aisles={storeAisles[store.id] ?? []}
             allStores={stores}
             onStoreRename={handleStoreRename}
+            onStoreColorChange={handleStoreColorChange}
             onAisleAdd={handleAisleAdd}
             onAisleRename={handleAisleRename}
             onAisleReorder={handleAisleReorder}

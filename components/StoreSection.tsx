@@ -13,6 +13,7 @@ type Props = {
   aisles: Aisle[];
   allStores: Store[];
   onStoreRename: (storeId: string, name: string) => Promise<string | null>;
+  onStoreColorChange: (storeId: string, color: string | null) => void;
   onAisleAdd: (storeId: string, name: string) => Promise<string | null>;
   onAisleRename: (aisleId: string, name: string) => Promise<string | null>;
   onAisleReorder: (storeId: string, aisles: Aisle[]) => Promise<void>;
@@ -24,6 +25,7 @@ export function StoreSection({
   aisles,
   allStores,
   onStoreRename,
+  onStoreColorChange,
   onAisleAdd,
   onAisleRename,
   onAisleReorder,
@@ -35,7 +37,7 @@ export function StoreSection({
 
   return (
     <View style={styles.block}>
-      <StoreHeader store={store} allStores={allStores} onRename={onStoreRename} />
+      <StoreHeader store={store} allStores={allStores} onRename={onStoreRename} onColorChange={onStoreColorChange} />
 
       {Platform.OS === 'web' ? (
         <FlatList

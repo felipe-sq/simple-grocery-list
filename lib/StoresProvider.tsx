@@ -8,12 +8,14 @@ interface StoresContextValue {
   stores: Store[];
   loading: boolean;
   createStore: (name: string) => Promise<{ store: Store | null; error: string | null }>;
+  updateStoreColor: (storeId: string, color: string | null) => Promise<string | null>;
 }
 
 const StoresContext = createContext<StoresContextValue>({
   stores: [],
   loading: true,
   createStore: async () => ({ store: null, error: 'Not initialized' }),
+  updateStoreColor: async () => 'Not initialized',
 });
 
 export function StoresProvider({ children }: { children: ReactNode }) {
@@ -92,8 +94,17 @@ export function StoresProvider({ children }: { children: ReactNode }) {
     [householdId],
   );
 
+  const updateStoreColor = useCallback(
+    async (storeId: string, color: string | null): Promise<string | null> => {
+      const { error } = await supabase.from('stores').update({ color }).eq('id', storeId);
+      if (!error) setStores((prev) => prev.map((s) => s.id === storeId ? { ...s, color } : s));
+      return error?.message ?? null;
+    },
+    [],
+  );
+
   return (
-    <StoresContext.Provider value={{ stores, loading, createStore }}>
+    <StoresContext.Provider value={{ stores, loading, createStore, updateStoreColor }}>
       {children}
     </StoresContext.Provider>
   );

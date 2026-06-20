@@ -83,6 +83,9 @@ export default function AppLayout() {
               accessibilityRole="tab"
             >
               <View style={styles.tabLabelRow}>
+                {store.color !== null && (
+                  <View style={[styles.storeDot, { backgroundColor: store.color }]} />
+                )}
                 <Text
                   style={[styles.tabLabel, pathname === storeHref && styles.tabLabelActive]}
                   numberOfLines={1}
@@ -103,16 +106,6 @@ export default function AppLayout() {
             </Pressable>
           );
         })}
-
-        <Pressable
-          onPress={() => router.push('/suggestions')}
-          style={styles.tabItem}
-          accessibilityRole="tab"
-        >
-          <Text style={[styles.tabLabel, pathname === '/suggestions' && styles.tabLabelActive]}>
-            Suggestions
-          </Text>
-        </Pressable>
 
         <Pressable
           onPress={() => router.push('/staples')}
@@ -171,6 +164,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  storeDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
   },
   tabLabel: {
     fontSize: 11,

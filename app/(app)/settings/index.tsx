@@ -111,6 +111,21 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionLabel}>SUGGESTIONS</Text>
+        <Text style={styles.description}>
+          Smart item suggestions based on your household's purchase history.
+        </Text>
+        <Pressable
+          style={styles.button}
+          onPress={() => router.push('/(app)/suggestions')}
+          accessibilityRole="button"
+          accessibilityLabel="View Suggestions"
+        >
+          <Text style={styles.buttonText}>View Suggestions</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
         <Pressable
           style={styles.signOutButton}
           onPress={handleSignOut}
