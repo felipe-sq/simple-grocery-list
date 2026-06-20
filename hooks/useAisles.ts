@@ -76,7 +76,9 @@ export function useAisles(
         .single();
 
       if (error) return { aisle: null, error: error.message };
-      return { aisle: data as Aisle, error: null };
+      const newAisle = data as Aisle;
+      setAisles((prev) => [...prev, newAisle]);
+      return { aisle: newAisle, error: null };
     },
     [householdId, storeId],
   );
