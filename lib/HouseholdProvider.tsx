@@ -18,10 +18,12 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const userId = session?.user.id ?? null;
+
   useEffect(() => {
     if (authLoading) return;
 
-    if (!session) {
+    if (!userId) {
       let active = true;
       queueMicrotask(() => {
         if (active) {
@@ -33,8 +35,6 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
         active = false;
       };
     }
-
-    const userId = session.user.id;
     let cancelled = false;
 
     async function fetchHousehold() {
@@ -74,7 +74,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [session, authLoading]);
+  }, [userId, authLoading]);
 
   return (
     <HouseholdContext.Provider value={{ householdId, loading }}>
