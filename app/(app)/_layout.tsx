@@ -1,8 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
-import { usePathname } from 'expo-router';
-import { TabList, TabSlot, TabTrigger, Tabs } from 'expo-router/ui';
+import { Slot, usePathname, useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +31,7 @@ export default function AppLayout() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const { isOnline } = useNetworkStatus();
+  const router = useRouter();
 
   const userId = session?.user.id ?? null;
   const userName = session ? getDisplayName(session) : '';
@@ -59,7 +59,7 @@ export default function AppLayout() {
   }, [isOnline]);
 
   return (
-    <Tabs>
+    <View style={styles.root}>
       <View style={styles.content}>
         {loading && (
           <View style={StyleSheet.absoluteFill}>
@@ -68,22 +68,23 @@ export default function AppLayout() {
             </View>
           </View>
         )}
-        <TabSlot />
+        <Slot />
       </View>
 
-      <TabList style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
+      <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
         {stores.map((store) => {
+          const storeHref = `/store/${store.id}`;
           const present = presenceByStore.get(store.id) ?? [];
           return (
-            <TabTrigger
+            <Pressable
               key={store.id}
-              name={store.id}
-              href={`/store/${store.id}`}
+              onPress={() => router.push({ pathname: '/store/[storeId]', params: { storeId: store.id } })}
               style={styles.tabItem}
+              accessibilityRole="tab"
             >
               <View style={styles.tabLabelRow}>
                 <Text
-                  style={[styles.tabLabel, pathname === `/store/${store.id}` && styles.tabLabelActive]}
+                  style={[styles.tabLabel, pathname === storeHref && styles.tabLabelActive]}
                   numberOfLines={1}
                 >
                   {store.name}
@@ -99,25 +100,35 @@ export default function AppLayout() {
                   {present.join(', ')}
                 </Text>
               )}
-            </TabTrigger>
+            </Pressable>
           );
         })}
 
-        <TabTrigger name="suggestions" href="/suggestions" style={styles.tabItem}>
-          <Text
-            style={[styles.tabLabel, pathname === '/suggestions' && styles.tabLabelActive]}
-          >
+        <Pressable
+          onPress={() => router.push('/suggestions')}
+          style={styles.tabItem}
+          accessibilityRole="tab"
+        >
+          <Text style={[styles.tabLabel, pathname === '/suggestions' && styles.tabLabelActive]}>
             Suggestions
           </Text>
-        </TabTrigger>
+        </Pressable>
 
-        <TabTrigger name="staples" href="/staples" style={styles.tabItem}>
+        <Pressable
+          onPress={() => router.push('/staples')}
+          style={styles.tabItem}
+          accessibilityRole="tab"
+        >
           <Text style={[styles.tabLabel, pathname === '/staples' && styles.tabLabelActive]}>
             Staples
           </Text>
-        </TabTrigger>
+        </Pressable>
 
-        <TabTrigger name="settings" href="/settings" style={styles.tabItem}>
+        <Pressable
+          onPress={() => router.push('/settings')}
+          style={styles.tabItem}
+          accessibilityRole="tab"
+        >
           <Text
             style={[
               styles.tabLabel,
@@ -126,13 +137,14 @@ export default function AppLayout() {
           >
             ⚙
           </Text>
-        </TabTrigger>
-      </TabList>
-    </Tabs>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   content: {
     flex: 1,
   },

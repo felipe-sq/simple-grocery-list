@@ -80,6 +80,7 @@ export default function StoreScreen() {
   const aisleGroups = useMemo(() => buildAisleGroups(items), [items]);
 
   const [manuallyExpanded, setManuallyExpanded] = useState<Set<string>>(new Set());
+  const [manuallyCollapsed, setManuallyCollapsed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fullyCheckedIds = new Set(
@@ -87,6 +88,7 @@ export default function StoreScreen() {
         .filter((g) => g.items.length > 0 && g.items.every((i) => i.checked))
         .map((g) => g.aisle.id),
     );
+    const allAisleIds = new Set(aisleGroups.map((g) => g.aisle.id));
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
@@ -94,6 +96,13 @@ export default function StoreScreen() {
         const next = new Set(prev);
         for (const id of next) {
           if (!fullyCheckedIds.has(id)) next.delete(id);
+        }
+        return next;
+      });
+      setManuallyCollapsed((prev) => {
+        const next = new Set(prev);
+        for (const id of next) {
+          if (!allAisleIds.has(id)) next.delete(id);
         }
         return next;
       });
@@ -121,8 +130,9 @@ export default function StoreScreen() {
   }
 
   function isCollapsed(group: AisleGroup): boolean {
-    const fullyChecked = group.items.length > 0 && group.items.every((i) => i.checked);
-    return fullyChecked && !manuallyExpanded.has(group.aisle.id);
+    if (manuallyExpanded.has(group.aisle.id)) return false;
+    if (manuallyCollapsed.has(group.aisle.id)) return true;
+    return group.items.length > 0 && group.items.every((i) => i.checked);
   }
 
   function handleLongPressItem(item: GroceryItemWithAisle) {
@@ -142,13 +152,16 @@ export default function StoreScreen() {
   }
 
   function handleToggle(group: AisleGroup) {
+    const id = group.aisle.id;
+    const collapsed = isCollapsed(group);
     setManuallyExpanded((prev) => {
       const next = new Set(prev);
-      if (isCollapsed(group)) {
-        next.add(group.aisle.id);
-      } else {
-        next.delete(group.aisle.id);
-      }
+      if (collapsed) { next.add(id); } else { next.delete(id); }
+      return next;
+    });
+    setManuallyCollapsed((prev) => {
+      const next = new Set(prev);
+      if (!collapsed) { next.add(id); } else { next.delete(id); }
       return next;
     });
   }
@@ -302,6 +315,14 @@ export default function StoreScreen() {
 
           <View style={styles.footer}>
             <Pressable
+              style={styles.footerAddBtn}
+              onPress={openAddSheet}
+              accessibilityLabel="Add item"
+              accessibilityRole="button"
+            >
+              <Text style={styles.footerAddBtnLabel}>＋</Text>
+            </Pressable>
+            <Pressable
               style={[styles.endTripBtn, allChecked && styles.endTripBtnPulse]}
               onPress={handleEndTripPress}
               accessibilityLabel="End trip"
@@ -428,13 +449,26 @@ const styles = StyleSheet.create({
   },
   allCheckedText: { fontSize: 16, fontWeight: '600', color: '#1d4ed8' },
   footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#e5e7eb',
     backgroundColor: '#fff',
   },
+  footerAddBtn: {
+    backgroundColor: '#eff6ff',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerAddBtnLabel: { color: '#2563eb', fontSize: 22, fontWeight: '400' },
   endTripBtn: {
+    flex: 1,
     backgroundColor: '#2563eb',
     borderRadius: 10,
     paddingVertical: 14,
