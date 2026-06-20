@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
     borderRadius: 8,
     paddingHorizontal: 12,
-    fontSize: 15,
+    fontSize: 16,
     color: '#111827',
   },
   searchCancel: { fontSize: 15, color: '#2563eb' },

@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   inputWrap: { flex: 1, marginRight: 12 },
   input: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.8,
     color: '#111827',

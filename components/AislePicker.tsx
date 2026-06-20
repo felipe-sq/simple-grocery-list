@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   newAisleText: { color: '#2563eb', fontSize: 15 },
   createRow: { padding: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#e5e7eb' },
   createInput: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#111827',
     borderBottomWidth: 1,
     borderBottomColor: '#2563eb',

@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   },
   createInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     color: '#111827',
     borderBottomWidth: 1,
     borderBottomColor: '#2563eb',
