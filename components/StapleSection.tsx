@@ -128,13 +128,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#dbeafe',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: '#bfdbfe',
   },
   chevron: {
     fontSize: 10,
-    color: '#6b7280',
+    color: '#1d4ed8',
     marginRight: 8,
     width: 12,
   },
@@ -142,12 +142,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#374151',
+    color: '#1d4ed8',
     letterSpacing: 0.2,
   },
   count: {
     fontSize: 13,
-    color: '#6b7280',
+    color: '#3b82f6',
   },
 });
 

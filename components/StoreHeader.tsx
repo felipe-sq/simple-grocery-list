@@ -19,9 +19,11 @@ type Props = {
   allStores: Store[];
   onRename: (storeId: string, name: string) => Promise<string | null>;
   onColorChange: (storeId: string, color: string | null) => void;
+  isCollapsed: boolean;
+  onToggle: () => void;
 };
 
-export function StoreHeader({ store, allStores, onRename, onColorChange }: Props) {
+export function StoreHeader({ store, allStores, onRename, onColorChange, isCollapsed, onToggle }: Props) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(store.name);
   const [error, setError] = useState<string | null>(null);
@@ -58,9 +60,19 @@ export function StoreHeader({ store, allStores, onRename, onColorChange }: Props
     }
   }
 
+  const accentColor = store.color ?? '#2563eb';
+
   return (
-    <View style={styles.container}>
-      <View style={styles.nameRow}>
+    <View style={[styles.container, { borderLeftWidth: 4, borderLeftColor: accentColor }]}>
+      <Pressable
+        style={styles.nameRow}
+        onPress={editing ? undefined : onToggle}
+        accessibilityRole="button"
+        accessibilityLabel={`${store.name}, ${isCollapsed ? 'collapsed' : 'expanded'}`}
+      >
+        {!editing && (
+          <Text style={[styles.chevron, { color: accentColor }]}>{isCollapsed ? '▶' : '▼'}</Text>
+        )}
         {editing ? (
           <View style={styles.inputWrap}>
             <TextInput
@@ -78,7 +90,7 @@ export function StoreHeader({ store, allStores, onRename, onColorChange }: Props
             {error !== null && <Text style={styles.error}>{error}</Text>}
           </View>
         ) : (
-          <Text style={styles.storeName}>{store.name.toUpperCase()}</Text>
+          <Text style={[styles.storeName, { color: accentColor }]}>{store.name.toUpperCase()}</Text>
         )}
         <Pressable
           onPress={startEdit}
@@ -89,7 +101,7 @@ export function StoreHeader({ store, allStores, onRename, onColorChange }: Props
         >
           <Text style={styles.renameBtn}>Rename</Text>
         </Pressable>
-      </View>
+      </Pressable>
 
       <View style={styles.colorRow}>
         <Text style={styles.colorLabel}>Color</Text>
@@ -141,12 +153,16 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   error: { fontSize: 12, color: '#dc2626', marginTop: 4 },
+  chevron: {
+    fontSize: 10,
+    marginRight: 8,
+    width: 12,
+  },
   storeName: {
     flex: 1,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: '#374151',
   },
   renameBtnWrap: { minHeight: 44, justifyContent: 'center' },
   renameBtn: { color: '#2563eb', fontWeight: '500', fontSize: 14 },

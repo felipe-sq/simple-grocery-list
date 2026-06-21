@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
 import DraggableFlatList, { DragEndParams } from 'react-native-draggable-flatlist';
 
@@ -31,62 +32,75 @@ export function StoreSection({
   onAisleReorder,
   onAisleDeleteRequest,
 }: Props) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   function handleDragEnd({ data }: DragEndParams<Aisle>) {
     onAisleReorder(store.id, data);
   }
 
   return (
     <View style={styles.block}>
-      <StoreHeader store={store} allStores={allStores} onRename={onStoreRename} onColorChange={onStoreColorChange} />
+      <StoreHeader
+        store={store}
+        allStores={allStores}
+        onRename={onStoreRename}
+        onColorChange={onStoreColorChange}
+        isCollapsed={isCollapsed}
+        onToggle={() => setIsCollapsed((v) => !v)}
+      />
 
-      {Platform.OS === 'web' ? (
-        <FlatList
-          data={aisles}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          renderItem={({ item }) => (
-            <AisleRow
-              aisle={item}
-              storeAisles={aisles}
-              drag={() => {}}
-              isActive={false}
-              onSaveName={onAisleRename}
-              onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
+      {!isCollapsed && (
+        <>
+          {Platform.OS === 'web' ? (
+            <FlatList
+              data={aisles}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              renderItem={({ item }) => (
+                <AisleRow
+                  aisle={item}
+                  storeAisles={aisles}
+                  drag={() => {}}
+                  isActive={false}
+                  onSaveName={onAisleRename}
+                  onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
+                />
+              )}
+            />
+          ) : (
+            <DraggableFlatList
+              data={aisles}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              renderItem={({ item, drag, isActive }) => (
+                <AisleRow
+                  aisle={item}
+                  storeAisles={aisles}
+                  drag={drag}
+                  isActive={isActive}
+                  onSaveName={onAisleRename}
+                  onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
+                />
+              )}
+              onDragEnd={handleDragEnd}
             />
           )}
-        />
-      ) : (
-        <DraggableFlatList
-          data={aisles}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          renderItem={({ item, drag, isActive }) => (
-            <AisleRow
-              aisle={item}
-              storeAisles={aisles}
-              drag={drag}
-              isActive={isActive}
-              onSaveName={onAisleRename}
-              onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
+
+          {aisles.length < MAX_AISLES ? (
+            <AddAisleRow
+              existingAisles={aisles}
+              onAdd={(name) => onAisleAdd(store.id, name)}
             />
+          ) : (
+            <Text style={styles.limitText}>Maximum of 10 aisles reached.</Text>
           )}
-          onDragEnd={handleDragEnd}
-        />
-      )}
 
-      {aisles.length < MAX_AISLES ? (
-        <AddAisleRow
-          existingAisles={aisles}
-          onAdd={(name) => onAisleAdd(store.id, name)}
-        />
-      ) : (
-        <Text style={styles.limitText}>Maximum of 10 aisles reached.</Text>
+          {/* EC8-5: store deletion deferred */}
+          <View style={styles.deleteHint}>
+            <Text style={styles.deleteHintText}>To remove a store, contact support.</Text>
+          </View>
+        </>
       )}
-
-      {/* EC8-5: store deletion deferred */}
-      <View style={styles.deleteHint}>
-        <Text style={styles.deleteHintText}>To remove a store, contact support.</Text>
-      </View>
     </View>
   );
 }
