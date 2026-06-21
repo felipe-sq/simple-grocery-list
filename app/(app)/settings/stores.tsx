@@ -16,7 +16,7 @@ import { useStores } from '@/hooks/useStores';
 import { supabase } from '@/lib/supabase';
 import type { Aisle, Store } from '@/types';
 
-const MAX_STORES = 3;
+const MAX_STORES = 10;
 
 export default function StoresSettingsScreen() {
   const { householdId } = useHousehold();
@@ -255,9 +255,8 @@ export default function StoresSettingsScreen() {
               </Pressable>
             )
           ) : (
-            // EC8-7: 3 stores reached
             <Text style={styles.limitText}>
-              Maximum of 3 stores reached. Rename an existing store to switch.
+              Maximum of 10 lists reached.
             </Text>
           )}
         </View>
