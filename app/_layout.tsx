@@ -5,7 +5,8 @@ import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
@@ -58,6 +59,16 @@ function RootLayoutNav({ fontsLoaded }: { fontsLoaded: boolean }) {
     if (loading) return;
     SplashScreen.hideAsync();
   }, [loading]);
+
+  // On web, blur the focused element whenever segments change (screen transition).
+  // React Navigation marks inactive screens aria-hidden while they still hold focus,
+  // which triggers a browser accessibility warning. Blurring here moves focus first.
+  useLayoutEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [segments]);
 
   // Upsert profile row on login. Idempotent so safe to run on token refresh too.
   useEffect(() => {

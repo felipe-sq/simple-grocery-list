@@ -143,7 +143,7 @@ export default function SettingsScreen() {
       </View>
       </ScrollView>
       {toastMsg !== null && (
-        <View style={styles.toast} pointerEvents="none">
+        <View style={styles.toast}>
           <Text style={styles.toastText}>{toastMsg}</Text>
         </View>
       )}
@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: 'center',
+    pointerEvents: 'none' as const,
   },
   toastText: {
     color: '#fff',

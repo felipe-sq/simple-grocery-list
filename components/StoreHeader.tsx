@@ -64,34 +64,36 @@ export function StoreHeader({ store, allStores, onRename, onColorChange, isColla
 
   return (
     <View style={[styles.container, { borderLeftWidth: 4, borderLeftColor: accentColor }]}>
-      <Pressable
-        style={styles.nameRow}
-        onPress={editing ? undefined : onToggle}
-        accessibilityRole="button"
-        accessibilityLabel={`${store.name}, ${isCollapsed ? 'collapsed' : 'expanded'}`}
-      >
-        {!editing && (
-          <Text style={[styles.chevron, { color: accentColor }]}>{isCollapsed ? '▶' : '▼'}</Text>
-        )}
-        {editing ? (
-          <View style={styles.inputWrap}>
-            <TextInput
-              ref={inputRef}
-              style={styles.input}
-              value={name}
-              onChangeText={(t) => { setName(t); setError(null); }}
-              onSubmitEditing={commit}
-              onBlur={commit}
-              autoCapitalize="characters"
-              returnKeyType="done"
-              selectTextOnFocus
-              accessibilityLabel="Store name"
-            />
-            {error !== null && <Text style={styles.error}>{error}</Text>}
-          </View>
-        ) : (
-          <Text style={[styles.storeName, { color: accentColor }]}>{store.name.toUpperCase()}</Text>
-        )}
+      <View style={styles.nameRow}>
+        <Pressable
+          style={styles.nameRowLeft}
+          onPress={editing ? undefined : onToggle}
+          accessibilityRole="button"
+          accessibilityLabel={`${store.name}, ${isCollapsed ? 'collapsed' : 'expanded'}`}
+        >
+          {!editing && (
+            <Text style={[styles.chevron, { color: accentColor }]}>{isCollapsed ? '▶' : '▼'}</Text>
+          )}
+          {editing ? (
+            <View style={styles.inputWrap}>
+              <TextInput
+                ref={inputRef}
+                style={styles.input}
+                value={name}
+                onChangeText={(t) => { setName(t); setError(null); }}
+                onSubmitEditing={commit}
+                onBlur={commit}
+                autoCapitalize="characters"
+                returnKeyType="done"
+                selectTextOnFocus
+                accessibilityLabel="Store name"
+              />
+              {error !== null && <Text style={styles.error}>{error}</Text>}
+            </View>
+          ) : (
+            <Text style={[styles.storeName, { color: accentColor }]}>{store.name.toUpperCase()}</Text>
+          )}
+        </Pressable>
         <Pressable
           onPress={startEdit}
           hitSlop={12}
@@ -101,7 +103,7 @@ export function StoreHeader({ store, allStores, onRename, onColorChange, isColla
         >
           <Text style={styles.renameBtn}>Rename</Text>
         </Pressable>
-      </Pressable>
+      </View>
 
       <View style={styles.colorRow}>
         <Text style={styles.colorLabel}>Color</Text>
@@ -142,6 +144,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 13,
   },
+  nameRowLeft: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   inputWrap: { flex: 1, marginRight: 12 },
   input: {
     fontSize: 16,

@@ -79,6 +79,7 @@ export function StapleSection({
 }: Props) {
   const storeName = group.store?.name ?? 'No store';
   const count = group.items.length;
+  const accentColor = group.store?.color ?? '#2563eb';
 
   function handleItemPress(item: StapleItemWithDetails) {
     if (selectionMode) {
@@ -92,14 +93,14 @@ export function StapleSection({
   return (
     <View style={styles.section}>
       <Pressable
-        style={styles.header}
+        style={[styles.header, { borderLeftColor: accentColor }]}
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityLabel={`${storeName}, ${count} items, ${isCollapsed ? 'collapsed' : 'expanded'}`}
       >
-        <Text style={styles.chevron}>{isCollapsed ? '▶' : '▼'}</Text>
-        <Text style={styles.storeName}>{storeName}</Text>
-        <Text style={styles.count}>{count}</Text>
+        <Text style={[styles.chevron, { color: accentColor }]}>{isCollapsed ? '▶' : '▼'}</Text>
+        <Text style={[styles.storeName, { color: accentColor }]}>{storeName}</Text>
+        <Text style={[styles.count, { color: accentColor }]}>{count}</Text>
       </Pressable>
 
       {!isCollapsed &&
@@ -128,13 +129,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#f3f4f6',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#bfdbfe',
+    borderBottomColor: '#e5e7eb',
+    borderLeftWidth: 4,
   },
   chevron: {
     fontSize: 10,
-    color: '#1d4ed8',
     marginRight: 8,
     width: 12,
   },
@@ -142,12 +143,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#1d4ed8',
     letterSpacing: 0.2,
   },
   count: {
     fontSize: 13,
-    color: '#3b82f6',
   },
 });
 

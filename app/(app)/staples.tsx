@@ -347,7 +347,7 @@ export default function StaplesScreen() {
       />
 
       {toastMsg !== null && (
-        <View style={styles.toast} pointerEvents="none">
+        <View style={styles.toast}>
           <Text style={styles.toastText}>{toastMsg}</Text>
         </View>
       )}
@@ -596,6 +596,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     zIndex: 100,
     alignItems: 'center',
+    pointerEvents: 'none' as const,
   },
   toastText: { color: '#fff', fontSize: 14, fontWeight: '500', textAlign: 'center' },
 });

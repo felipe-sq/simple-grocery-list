@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { GroceryItemWithAisle } from '@/types';
 
@@ -117,11 +117,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     width: '100%',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
+    ...Platform.select({
+      android: { elevation: 8 },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12 },
+      web: { boxShadow: '0px 4px 12px rgba(0,0,0,0.15)' } as object,
+    }),
   },
   itemName: {
     fontSize: 13,

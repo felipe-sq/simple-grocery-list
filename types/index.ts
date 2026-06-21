@@ -124,12 +124,12 @@ export type StapleItem = {
 };
 
 export type StapleItemWithDetails = StapleItem & {
-  store: Pick<Store, 'id' | 'name' | 'sort_order'> | null;
+  store: Pick<Store, 'id' | 'name' | 'sort_order' | 'color'> | null;
   aisle: Pick<Aisle, 'id' | 'name'> | null;
 };
 
 export type StapleGroup = {
-  store: Pick<Store, 'id' | 'name' | 'sort_order'> | null;
+  store: Pick<Store, 'id' | 'name' | 'sort_order' | 'color'> | null;
   items: StapleItemWithDetails[];
 };
 

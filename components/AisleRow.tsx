@@ -40,8 +40,9 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onSav
     const trimmed = name.trim();
     if (!trimmed || trimmed === aisle.name) {
       setName(aisle.name);
-      setEditing(false);
       setError(null);
+      // Defer close by one tick so any pending click (e.g. color swatch) fires first
+      setTimeout(() => setEditing(false), 0);
       return;
     }
     const isDuplicate = storeAisles.some(
@@ -100,7 +101,7 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onSav
                 return (
                   <Pressable
                     key={key}
-                    onPress={() => onSaveColor(aisle.id, key)}
+                    onPress={() => void onSaveColor(aisle.id, key)}
                     hitSlop={6}
                     accessibilityRole="button"
                     accessibilityLabel={`Set color ${key}`}
@@ -189,11 +190,11 @@ const styles = StyleSheet.create({
   },
   rowActive: {
     backgroundColor: '#f3f4f6',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    ...Platform.select({
+      android: { elevation: 4 },
+      ios: { shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+      web: { boxShadow: '0px 2px 4px rgba(0,0,0,0.1)' } as object,
+    }),
   },
   dragHandle: {
     paddingRight: 12,

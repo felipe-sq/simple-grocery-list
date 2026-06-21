@@ -32,7 +32,7 @@ export function useStapleItems(householdId: string | null): {
       const { data } = await supabase
         .from('staple_items')
         .select(
-          '*, store:stores!default_store_id(id, name, sort_order), aisle:aisles!default_aisle_id(id, name)',
+          '*, store:stores!default_store_id(id, name, sort_order, color), aisle:aisles!default_aisle_id(id, name)',
         )
         .eq('household_id', householdId)
         .order('sort_order');

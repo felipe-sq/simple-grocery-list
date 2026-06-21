@@ -81,11 +81,11 @@ const styles = StyleSheet.create({
   },
   rowActive: {
     backgroundColor: '#f3f4f6',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    ...Platform.select({
+      android: { elevation: 4 },
+      ios: { shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+      web: { boxShadow: '0px 2px 4px rgba(0,0,0,0.1)' } as object,
+    }),
   },
   circle: {
     width: 22,

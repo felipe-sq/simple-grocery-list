@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import {
@@ -69,6 +69,24 @@ export function SheetModal({
   const modalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => [snapPoint], [snapPoint]);
 
+  // On web, blur any focused element before the Modal hides itself with aria-hidden.
+  // useLayoutEffect fires synchronously after DOM commits, before paint — early enough
+  // to move focus away before the browser logs the aria-hidden/focus conflict warning.
+  useLayoutEffect(() => {
+    if (Platform.OS !== 'web' || visible) return;
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [visible]);
+
+  // Blur before calling onClose so focus moves before the parent sets visible=false.
+  const handleClose = useCallback(() => {
+    if (Platform.OS === 'web' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    onClose();
+  }, [onClose]);
+
   useEffect(() => {
     if (Platform.OS === 'web') return;
     if (visible) {
@@ -92,11 +110,11 @@ export function SheetModal({
 
   if (Platform.OS === 'web') {
     return (
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
         <View style={styles.overlay}>
           <Pressable
             style={styles.backdrop}
-            onPress={onClose}
+            onPress={handleClose}
             accessibilityRole="button"
             accessibilityLabel="Close"
           />
@@ -116,7 +134,7 @@ export function SheetModal({
       backdropComponent={renderBackdrop}
       keyboardBehavior={hasKeyboardInput ? 'interactive' : undefined}
       keyboardBlurBehavior={hasKeyboardInput ? 'restore' : undefined}
-      onDismiss={onClose}
+      onDismiss={handleClose}
     >
       {children}
     </BottomSheetModal>
