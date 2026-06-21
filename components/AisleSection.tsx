@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
 import { NestableDraggableFlatList, RenderItemParams } from 'react-native-draggable-flatlist';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 
 import { GroceryItemRow } from '@/components/GroceryItemRow';
 import { getAisleTheme } from '@/lib/aisleColors';
@@ -47,9 +48,10 @@ export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLon
 
   return (
     <View style={styles.section}>
-      <Pressable
+      <TouchableOpacity
         style={[styles.header, { backgroundColor: theme.bg, borderBottomColor: theme.border }]}
         onPress={onToggle}
+        activeOpacity={0.85}
         accessibilityRole="button"
         accessibilityLabel={`${aisle.name}, ${checkedCount} of ${total} checked, ${isCollapsed ? 'collapsed' : 'expanded'}`}
       >
@@ -58,7 +60,7 @@ export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLon
         <Text style={[styles.count, { color: theme.text }]}>
           {checkedCount} of {total} ✓
         </Text>
-      </Pressable>
+      </TouchableOpacity>
 
       {!isCollapsed && (
         Platform.OS === 'web' ? (

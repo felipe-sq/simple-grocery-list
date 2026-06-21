@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import type { StapleGroup, StapleItemWithDetails } from '@/types';
 
@@ -92,16 +92,17 @@ export function StapleSection({
 
   return (
     <View style={styles.section}>
-      <Pressable
+      <TouchableOpacity
         style={[styles.header, { borderLeftColor: accentColor }]}
         onPress={onToggle}
+        activeOpacity={0.85}
         accessibilityRole="button"
         accessibilityLabel={`${storeName}, ${count} items, ${isCollapsed ? 'collapsed' : 'expanded'}`}
       >
         <Text style={[styles.chevron, { color: accentColor }]}>{isCollapsed ? '▶' : '▼'}</Text>
         <Text style={[styles.storeName, { color: accentColor }]}>{storeName}</Text>
         <Text style={[styles.count, { color: accentColor }]}>{count}</Text>
-      </Pressable>
+      </TouchableOpacity>
 
       {!isCollapsed &&
         group.items.map((item) => (
