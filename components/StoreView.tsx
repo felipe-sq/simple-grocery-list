@@ -2,7 +2,6 @@ import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NestableScrollContainer } from 'react-native-draggable-flatlist';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 
 import { AddItemSheet, type AddItemSheetHandle } from '@/components/AddItemSheet';
@@ -126,8 +125,6 @@ export function StoreView({ storeId }: Props) {
     });
     return () => { active = false; };
   }, [aisleGroups]);
-
-  const insets = useSafeAreaInsets();
 
   const currentStore = stores.find((s) => s.id === storeId);
   const allChecked = items.length > 0 && items.every((i) => i.checked);
@@ -291,7 +288,7 @@ export function StoreView({ storeId }: Props) {
           )}
         </View>
       ) : (
-        <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
+        <View style={styles.screen}>
           {(() => {
             const listContent = (
               <>
