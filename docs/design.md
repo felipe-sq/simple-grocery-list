@@ -1,5 +1,5 @@
 # Design & Status Reference
-**Last updated:** 2026-06-20
+**Last updated:** 2026-06-21
 
 This file is the running architecture snapshot and status tracker. Update it as features ship or decisions change. It is NOT the spec — the spec lives in `prd.md`, `tasks.md`, and `ux-flows.md`.
 
@@ -41,14 +41,15 @@ app/
   (auth)/                  Sign-in, sign-up, reset-password
   (onboarding)/            Create/join household gate (post-auth, pre-app)
   (app)/
-    _layout.tsx            Tab bar (dynamic store tabs + Staples + Settings)
-    index.tsx              Redirect to first store
-    store/[storeId].tsx    Per-store grocery list
+    _layout.tsx            Tab bar (Lists + Staples + Settings, static tabs; custom tab bar owns paddingBottom safe area)
+    index.tsx              Redirect to /lists (or /settings/stores if household has no stores)
+    lists.tsx              Lists view — horizontal store chip selector + embedded StoreView
+    store/[storeId].tsx    Direct per-store view (used for deep links; chip bar not shown here)
     staples.tsx            Staples list
     suggestions.tsx        Suggestions tab
     settings/
       index.tsx            Settings screen (invite, manage stores, sign out)
-      stores.tsx           Store & aisle configuration
+      stores.tsx           Store & aisle configuration + store deletion
 
 components/
   AddItemSheet.tsx         Add-item bottom sheet
@@ -57,20 +58,20 @@ components/
   AisleMismatchModal.tsx   Modal when staple's aisle doesn't exist in target store
   AislePicker.tsx          Aisle selector component
   AisleRow.tsx             Aisle row in store config
-  AisleSection.tsx         Collapsible aisle section in grocery list
+  AisleSection.tsx         Collapsible aisle section in grocery list (uses RNGH TouchableOpacity for header — see §8)
   BarcodeScanner.tsx       Full-screen barcode scanner overlay
   EditItemSheet.tsx        Edit existing grocery item
-  EditScreenInfo.tsx       (scaffold leftover)
   EndTripModal.tsx         End Trip confirmation modal
   GroceryItemRow.tsx       Single grocery item row
   ItemContextMenu.tsx      Long-press context menu (edit/move/delete)
   ListeningOverlay.tsx     Voice input listening overlay
   MoveAisleSheet.tsx       Move item to different aisle
   SheetModal.tsx           Generic sheet/modal wrapper
-  StapleSection.tsx        Staple group section (by store)
-  StoreHeader.tsx          Per-store tab header with + / mic / camera buttons
+  StapleSection.tsx        Staple group section (by store); uses RN TouchableOpacity for header — see §8)
+  StoreHeader.tsx          Per-store expandable header in Settings (rename + color picker + collapse toggle)
   StorePickerModal.tsx     Store selector modal
-  StoreSection.tsx         Store grouping for staples
+  StoreSection.tsx         Store block in Settings (aisles list + delete store button)
+  StoreView.tsx            Full per-store grocery list view (used inside lists.tsx and store/[storeId].tsx)
   SuggestionCard.tsx       Suggestion item card
   SuggestionsDropdown.tsx  Inline type-ahead suggestions dropdown
   VoiceItemCard.tsx        Card for reviewing voice-parsed item
@@ -98,6 +99,7 @@ lib/
   supabase.web.ts          Supabase client (web — uses localStorage)
   HouseholdProvider.tsx    household_id state + onboarding gate
   StoresProvider.tsx       Stores list context (shared across tabs)
+  aisleColors.ts           8-color preset palette + theme helper (bg/text/border tokens per color)
   offlineQueue.ts          Offline mutation queue (enqueue/flush)
   parseVoiceInput.ts       Voice utterance → item array parser
   storage.ts               Storage interface
@@ -146,11 +148,7 @@ WHERE checked = false;
 ```
 Enforced at both DB level (unique partial index) and UI level.
 
-**Pending manual SQL** (run in Supabase SQL Editor):
-```sql
-ALTER TABLE stores ADD COLUMN color TEXT DEFAULT NULL;
-```
-*(The migration file `20260620000000_add_store_color.sql` was created but the column may not exist yet if the migration wasn't applied via `supabase db push`.)*
+**All manual SQL applied** as of 2026-06-21. No pending dashboard actions.
 
 ---
 
@@ -236,6 +234,14 @@ ALTER TABLE stores ADD COLUMN color TEXT DEFAULT NULL;
 | `3f028d7` | Enable PWA standalone mode (initial attempt) |
 | `315c433` | Fix PWA standalone on iOS: add `manifest.json` + Apple meta tags |
 | `10d8217` | Fix safe area bleed in PWA standalone mode (`viewport-fit=cover` + `#root` CSS) |
+| `979dcd1` | Improve section header visibility across store, staples, and settings pages |
+| `72f081f` | Replace per-store tabs with static Lists tab + horizontal chip selector (`lists.tsx`) |
+| `29a9a24` | Add per-aisle color theming with 8-color preset palette (`lib/aisleColors.ts`) |
+| `fb86c65` | Fix web console warnings; UI polish; propagate store color to StapleSection accent |
+| `1101dd2` | Add store deletion with danger confirmation modal (counts items/history, cascade via FK) |
+| `6287055` | Fix extra empty space above tab bar on Lists page (StoreView was double-applying `insets.bottom`) |
+| `5696d02` | Fix scroll blocked by section header taps (RNGH vs RN gesture system conflict in AisleSection) |
+| `aa840de` | Fix fresh-load landing on StoreView instead of Lists chip bar (index.tsx redirect target) |
 
 ---
 
@@ -243,15 +249,12 @@ ALTER TABLE stores ADD COLUMN color TEXT DEFAULT NULL;
 
 ### Manual (requires Supabase dashboard)
 
-All manual Supabase steps completed as of 2026-06-20:
-- ✅ `stores.color TEXT` column applied via SQL Editor
-- ✅ Reset-password redirect URL added to Auth → URL Configuration → Redirect URLs
+All manual Supabase steps completed as of 2026-06-21. Nothing pending.
 
 ### Code (not yet started)
 
 - **T-026 (edge case audit):** Systematic walk through all 50+ edge cases in `ux-flows.md`. Partial coverage exists but not verified end-to-end.
 - **T-027 (accessibility):** `accessibilityLabel` + `accessibilityRole` audit; 44pt tap targets; VoiceOver testing.
-- **Store deletion:** Currently disabled with a note (per T-007 spec). Not yet implemented.
 - **Dark mode:** Out of scope for v1, per PRD §10.
 - **Android support:** Out of scope for v1, per PRD §10.
 
@@ -268,3 +271,8 @@ All manual Supabase steps completed as of 2026-06-20:
 | Unique household per user | `household_members.user_id` has a unique constraint — one user, one household. This is intentional for v1. |
 | Service role key | Only used in Supabase Edge Functions (Deno, server-side). Never in client code. |
 | Item history writes | Only allowed via End Trip flow (T-013) or the add-item path (T-011). Never written to directly from other UI flows. |
+| Gesture system in Lists | `AisleSection` headers use RNGH `TouchableOpacity` (from `react-native-gesture-handler`), not RN `Pressable`. Required because `AisleSection` lives inside `NestableScrollContainer` (also RNGH). Mixing gesture systems causes scroll to lose to taps — both must be in the same system. `StapleSection` uses RN `TouchableOpacity` (native ScrollView context; better `cancelsTouchesInView` than `Pressable`). |
+| Safe area inset ownership | The custom tab bar in `app/(app)/_layout.tsx` exclusively owns `paddingBottom: insets.bottom`. Screens rendered inside the `content` View (`flex: 1`, sibling of the tab bar) must NOT apply their own bottom safe area. Adding it there creates double-spacing. |
+| Lists landing page | `app/(app)/index.tsx` redirects to `/lists`, not to `/store/[storeId]`. The `lists.tsx` chip-bar view is the canonical Lists landing. The `/store/[storeId]` route still exists for direct store deep-links; the Lists tab highlights for both paths (`listsActive = pathname === '/lists' \|\| pathname.startsWith('/store/')`). |
+| Store deletion cascade | Deleting a `stores` row cascades via FK `ON DELETE CASCADE` to `aisles`, `grocery_items`, and `item_history`. `staple_items.default_store_id` uses `ON DELETE SET NULL`. Client code just calls `supabase.from('stores').delete()` and RLS + cascades handle the rest. Danger modal shows live counts of items and history rows that will be lost. |
+| Aisle + store colors | Stores and aisles each have a nullable `color TEXT` column. `lib/aisleColors.ts` exports `AISLE_COLORS` (8-color palette) and `getAisleTheme(color)` which returns `{ bg, text, border }` tokens. Staple sections use `store.color` as their left-border accent. `null` color falls back to `#2563eb` (blue). |
