@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FlatList, Platform, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import DraggableFlatList, { DragEndParams } from 'react-native-draggable-flatlist';
 
 import { AddAisleRow } from '@/components/AddAisleRow';
@@ -20,6 +20,7 @@ type Props = {
   onAisleColorChange: (aisleId: string, color: string | null) => Promise<void>;
   onAisleReorder: (storeId: string, aisles: Aisle[]) => Promise<void>;
   onAisleDeleteRequest: (storeId: string, aisleId: string) => void;
+  onStoreDeleteRequest: (storeId: string) => void;
 };
 
 export function StoreSection({
@@ -33,6 +34,7 @@ export function StoreSection({
   onAisleColorChange,
   onAisleReorder,
   onAisleDeleteRequest,
+  onStoreDeleteRequest,
 }: Props) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -99,10 +101,14 @@ export function StoreSection({
             <Text style={styles.limitText}>Maximum of 10 aisles reached.</Text>
           )}
 
-          {/* EC8-5: store deletion deferred */}
-          <View style={styles.deleteHint}>
-            <Text style={styles.deleteHintText}>To remove a store, contact support.</Text>
-          </View>
+          <Pressable
+            onPress={() => onStoreDeleteRequest(store.id)}
+            style={styles.deleteStoreRow}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${store.name} store`}
+          >
+            <Text style={styles.deleteStoreText}>Delete store…</Text>
+          </Pressable>
         </>
       )}
     </View>
@@ -122,16 +128,15 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     fontSize: 14,
   },
-  deleteHint: {
+  deleteStoreRow: {
     paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 12,
+    paddingTop: 10,
+    paddingBottom: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#f3f4f6',
+    borderTopColor: '#fee2e2',
   },
-  deleteHintText: {
-    color: '#9ca3af',
-    fontSize: 12,
-    fontStyle: 'italic',
+  deleteStoreText: {
+    fontSize: 14,
+    color: '#dc2626',
   },
 });
