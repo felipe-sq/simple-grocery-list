@@ -11,7 +11,7 @@ export default function AppIndex() {
   useEffect(() => {
     if (loading) return;
     if (stores.length > 0) {
-      router.replace({ pathname: '/store/[storeId]', params: { storeId: stores[0].id } });
+      router.replace('/lists');
     } else {
       router.replace('/(app)/settings/stores');
     }
