@@ -71,7 +71,7 @@ export function VoiceReviewSheet({ visible, onClose, store, householdId, items, 
           if (!match?.aisleId) return r;
           const found = aisles.find((a) => a.id === match.aisleId);
           if (!found) return r;
-          return { ...r, aisleId: found.id, aisle: { id: found.id, name: found.name, sort_order: found.sort_order } };
+          return { ...r, aisleId: found.id, aisle: { id: found.id, name: found.name, sort_order: found.sort_order, color: found.color } };
         }),
       );
     }

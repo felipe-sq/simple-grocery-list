@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScaleDecorator } from 'react-native-draggable-flatlist';
 
+import { AISLE_COLOR_KEYS, AISLE_PALETTE, DEFAULT_AISLE_COLOR, type AisleColorKey } from '@/lib/aisleColors';
 import type { Aisle } from '@/types';
 
 type Props = {
@@ -10,10 +11,11 @@ type Props = {
   drag: () => void;
   isActive: boolean;
   onSaveName: (aisleId: string, newName: string) => Promise<string | null>;
+  onSaveColor: (aisleId: string, color: string | null) => Promise<void>;
   onDeleteRequest?: (aisleId: string) => void;
 };
 
-export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDeleteRequest }: Props) {
+export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onSaveColor, onDeleteRequest }: Props) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(aisle.name);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +23,8 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
   const inputRef = useRef<TextInput>(null);
   const submittingRef = useRef(false);
   const deletingRef = useRef(false);
+
+  const activeColor = (aisle.color ?? DEFAULT_AISLE_COLOR) as AisleColorKey;
 
   function startEdit() {
     deletingRef.current = false;
@@ -40,7 +44,6 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
       setError(null);
       return;
     }
-    // EC8-1: block duplicate aisle name within the same store
     const isDuplicate = storeAisles.some(
       (a) => a.id !== aisle.id && a.name.toLowerCase() === trimmed.toLowerCase(),
     );
@@ -89,6 +92,31 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
               accessibilityLabel="Aisle name"
             />
             {error !== null && <Text style={styles.errorText}>{error}</Text>}
+
+            <View style={styles.swatchRow}>
+              {AISLE_COLOR_KEYS.map((key) => {
+                const theme = AISLE_PALETTE[key];
+                const selected = activeColor === key;
+                return (
+                  <Pressable
+                    key={key}
+                    onPress={() => onSaveColor(aisle.id, key)}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Set color ${key}`}
+                    accessibilityState={{ selected }}
+                    style={[
+                      styles.swatch,
+                      { backgroundColor: theme.bg, borderColor: theme.border },
+                      selected && { borderColor: theme.text, borderWidth: 2 },
+                    ]}
+                  >
+                    {selected && <View style={[styles.swatchDot, { backgroundColor: theme.text }]} />}
+                  </Pressable>
+                );
+              })}
+            </View>
+
             {onDeleteRequest !== undefined && (
               deleteConfirming ? (
                 <View style={styles.deleteConfirmRow}>
@@ -129,7 +157,10 @@ export function AisleRow({ aisle, storeAisles, drag, isActive, onSaveName, onDel
             )}
           </View>
         ) : (
-          <Text style={styles.aisleName}>{aisle.name}</Text>
+          <View style={styles.nameRow}>
+            <View style={[styles.colorDot, { backgroundColor: AISLE_PALETTE[activeColor].text }]} />
+            <Text style={styles.aisleName}>{aisle.name}</Text>
+          </View>
         )}
 
         <Pressable
@@ -187,6 +218,25 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     marginTop: 4,
   },
+  swatchRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 2,
+  },
+  swatch: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   deleteBtn: {
     marginTop: 10,
     paddingVertical: 6,
@@ -215,6 +265,18 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
   },
   deleteConfirmText: { fontSize: 13, color: '#fff', fontWeight: '600' as const },
+  nameRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  colorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    flexShrink: 0,
+  },
   aisleName: {
     flex: 1,
     fontSize: 15,

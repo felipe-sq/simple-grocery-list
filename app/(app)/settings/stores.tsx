@@ -102,6 +102,19 @@ export default function StoresSettingsScreen() {
     return error?.message ?? null;
   }
 
+  async function handleAisleColorChange(aisleId: string, color: string | null): Promise<void> {
+    const { error } = await supabase.from('aisles').update({ color }).eq('id', aisleId);
+    if (!error) {
+      setStoreAisles((prev) => {
+        const next: Record<string, Aisle[]> = {};
+        for (const sid of Object.keys(prev)) {
+          next[sid] = prev[sid].map((a) => (a.id === aisleId ? { ...a, color } : a));
+        }
+        return next;
+      });
+    }
+  }
+
   async function handleAisleReorder(storeId: string, aisles: Aisle[]): Promise<void> {
     setStoreAisles((prev) => ({ ...prev, [storeId]: aisles }));
     await Promise.all(aisles.map((a, idx) => supabase.from('aisles').update({ sort_order: idx * 10 }).eq('id', a.id)));
@@ -211,6 +224,7 @@ export default function StoresSettingsScreen() {
             onStoreColorChange={handleStoreColorChange}
             onAisleAdd={handleAisleAdd}
             onAisleRename={handleAisleRename}
+            onAisleColorChange={handleAisleColorChange}
             onAisleReorder={handleAisleReorder}
             onAisleDeleteRequest={handleAisleDeleteRequest}
           />

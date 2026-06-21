@@ -8,7 +8,7 @@ export type ReviewItemState = {
   key: string;
   name: string;
   aisleId: string | null;
-  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'> | null;
+  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'> | null;
   qty: string;
   unit: string;
   checked: boolean;
@@ -38,7 +38,7 @@ export function VoiceItemCard({ item, storeName, aisles, onUpdate, onCreateAisle
   function handleAisleSelect(aisle: Aisle) {
     onUpdate(item.key, {
       aisleId: aisle.id,
-      aisle: { id: aisle.id, name: aisle.name, sort_order: aisle.sort_order },
+      aisle: { id: aisle.id, name: aisle.name, sort_order: aisle.sort_order, color: aisle.color },
     });
   }
 
@@ -53,6 +53,7 @@ export function VoiceItemCard({ item, storeName, aisles, onUpdate, onCreateAisle
           id: result.aisle.id,
           name: result.aisle.name,
           sort_order: result.aisle.sort_order,
+          color: result.aisle.color,
         },
       });
     }

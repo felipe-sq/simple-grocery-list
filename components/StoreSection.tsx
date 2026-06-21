@@ -17,6 +17,7 @@ type Props = {
   onStoreColorChange: (storeId: string, color: string | null) => void;
   onAisleAdd: (storeId: string, name: string) => Promise<string | null>;
   onAisleRename: (aisleId: string, name: string) => Promise<string | null>;
+  onAisleColorChange: (aisleId: string, color: string | null) => Promise<void>;
   onAisleReorder: (storeId: string, aisles: Aisle[]) => Promise<void>;
   onAisleDeleteRequest: (storeId: string, aisleId: string) => void;
 };
@@ -29,6 +30,7 @@ export function StoreSection({
   onStoreColorChange,
   onAisleAdd,
   onAisleRename,
+  onAisleColorChange,
   onAisleReorder,
   onAisleDeleteRequest,
 }: Props) {
@@ -63,6 +65,7 @@ export function StoreSection({
                   drag={() => {}}
                   isActive={false}
                   onSaveName={onAisleRename}
+                  onSaveColor={onAisleColorChange}
                   onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
                 />
               )}
@@ -79,6 +82,7 @@ export function StoreSection({
                   drag={drag}
                   isActive={isActive}
                   onSaveName={onAisleRename}
+                  onSaveColor={onAisleColorChange}
                   onDeleteRequest={(aisleId) => onAisleDeleteRequest(store.id, aisleId)}
                 />
               )}

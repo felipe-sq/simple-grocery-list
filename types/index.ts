@@ -13,6 +13,7 @@ export type Aisle = {
   store_id: string;
   name: string;
   sort_order: number;
+  color: string | null;
 };
 
 export type GroceryItem = {
@@ -34,15 +35,15 @@ export type GroceryItem = {
   updated_at: string;
 };
 
-// GroceryItem with the joined aisle row (id, name, sort_order only).
+// GroceryItem with the joined aisle row (id, name, sort_order, color only).
 // pending_sync is client-only: set when a mutation is queued offline.
 export type GroceryItemWithAisle = GroceryItem & {
-  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'>;
   pending_sync?: boolean;
 };
 
 export type AisleGroup = {
-  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'>;
   items: GroceryItemWithAisle[];
 };
 
@@ -61,7 +62,7 @@ export type AddItemInput = {
   name: string;
   storeId: string;
   aisleId: string;
-  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'>;
   quantity: number | null;
   unit: string | null;
   notes: string | null;
@@ -76,14 +77,14 @@ export type BarcodePrefill = {
   offline?: boolean;
   historyStoreId?: string;
   historyAisleId?: string;
-  historyAisle?: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+  historyAisle?: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'>;
 };
 
 export type EditItemInput = {
   name: string;
   storeId: string;
   aisleId: string;
-  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>;
+  aisle: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'>;
   quantity: number | null;
   unit: string | null;
   notes: string | null;

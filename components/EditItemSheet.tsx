@@ -10,7 +10,7 @@ import type { Aisle, EditItemInput, GroceryItemWithAisle, Store } from '@/types'
 type FormValues = {
   name: string;
   selectedStoreId: string;
-  selectedAisle: Pick<Aisle, 'id' | 'name' | 'sort_order'> | null;
+  selectedAisle: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'> | null;
   qty: string;
   unit: string;
   notes: string;
@@ -166,7 +166,7 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
             <AislePicker
               aisles={aisles}
               selectedAisleId={form.selectedAisle?.id ?? null}
-              onSelect={(aisle) => setForm((prev) => ({ ...prev, selectedAisle: { id: aisle.id, name: aisle.name, sort_order: aisle.sort_order } }))}
+              onSelect={(aisle) => setForm((prev) => ({ ...prev, selectedAisle: { id: aisle.id, name: aisle.name, sort_order: aisle.sort_order, color: aisle.color } }))}
               onCreateAisle={createAisle}
             />
           </View>

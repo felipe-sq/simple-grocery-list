@@ -25,7 +25,7 @@ export function useGroceryItems(
   addItem: (data: AddItemInput) => Promise<{ error: string | null }>;
   editItem: (itemId: string, data: EditItemInput) => Promise<{ error: string | null }>;
   deleteItem: (itemId: string) => Promise<{ error: string | null }>;
-  moveItemToAisle: (itemId: string, targetAisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>) => Promise<{ error: string | null }>;
+  moveItemToAisle: (itemId: string, targetAisle: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'>) => Promise<{ error: string | null }>;
   reorderItems: (aisleId: string, reorderedItems: GroceryItemWithAisle[]) => Promise<void>;
   endTrip: () => Promise<{ error: string | null; raceLost: boolean }>;
 } {
@@ -118,7 +118,7 @@ export function useGroceryItems(
     async function fetchItems() {
       const { data } = await supabase
         .from('grocery_items')
-        .select('*, aisle:aisles(id, name, sort_order)')
+        .select('*, aisle:aisles(id, name, sort_order, color)')
         .eq('store_id', storeId)
         .eq('household_id', householdId)
         .order('sort_order');
@@ -366,7 +366,7 @@ export function useGroceryItems(
     return { error: null };
   }, []);
 
-  const moveItemToAisle = useCallback(async (itemId: string, targetAisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>): Promise<{ error: string | null }> => {
+  const moveItemToAisle = useCallback(async (itemId: string, targetAisle: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'>): Promise<{ error: string | null }> => {
     const currentHouseholdId = householdIdRef.current;
     if (!currentHouseholdId) return { error: 'Not authenticated' };
 

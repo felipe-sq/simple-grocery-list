@@ -30,7 +30,7 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
 ) {
   const [name, setName] = useState('');
   const [selectedStoreId, setSelectedStoreId] = useState(store.id);
-  const [selectedAisle, setSelectedAisle] = useState<Pick<Aisle, 'id' | 'name' | 'sort_order'> | null>(null);
+  const [selectedAisle, setSelectedAisle] = useState<Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'> | null>(null);
   const [qty, setQty] = useState('');
   const [unit, setUnit] = useState('');
   const [notes, setNotes] = useState('');
@@ -48,7 +48,7 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
   useEffect(() => {
     if (selectedAisle !== null) return;
     if (aisles.length === 1) {
-      setSelectedAisle({ id: aisles[0].id, name: aisles[0].name, sort_order: aisles[0].sort_order });
+      setSelectedAisle({ id: aisles[0].id, name: aisles[0].name, sort_order: aisles[0].sort_order, color: aisles[0].color });
     }
   }, [aisles, selectedAisle]);
 
@@ -125,7 +125,7 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
   function handleSuggestionSelect(s: SuggestionResult) {
     setName(s.name);
     setSelectedStoreId(s.store_id);
-    setSelectedAisle({ id: s.aisle_id, name: s.aisle_name, sort_order: 0 });
+    setSelectedAisle({ id: s.aisle_id, name: s.aisle_name, sort_order: 0, color: null });
     setNameError(null);
     setSubmitError(null);
     setScanNotice(null);
@@ -245,7 +245,7 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
             <AislePicker
               aisles={aisles}
               selectedAisleId={selectedAisle?.id ?? null}
-              onSelect={(aisle) => setSelectedAisle({ id: aisle.id, name: aisle.name, sort_order: aisle.sort_order })}
+              onSelect={(aisle) => setSelectedAisle({ id: aisle.id, name: aisle.name, sort_order: aisle.sort_order, color: aisle.color })}
               onCreateAisle={createAisle}
             />
             {selectedAisle === null && aisles.length > 1 && (

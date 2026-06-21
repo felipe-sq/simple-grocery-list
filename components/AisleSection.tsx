@@ -3,6 +3,7 @@ import { FlatList, Platform, Pressable, StyleSheet, Text, View } from 'react-nat
 import { NestableDraggableFlatList, RenderItemParams } from 'react-native-draggable-flatlist';
 
 import { GroceryItemRow } from '@/components/GroceryItemRow';
+import { getAisleTheme } from '@/lib/aisleColors';
 import type { AisleGroup, GroceryItemWithAisle } from '@/types';
 
 type Props = {
@@ -18,6 +19,7 @@ export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLon
   const { aisle, items } = group;
   const total = items.length;
   const checkedCount = items.filter((i) => i.checked).length;
+  const theme = getAisleTheme(aisle.color);
 
   const renderItem = useCallback(
     ({ item, drag, isActive }: RenderItemParams<GroceryItemWithAisle>) => (
@@ -46,14 +48,14 @@ export function AisleSection({ group, isCollapsed, onToggle, onToggleItem, onLon
   return (
     <View style={styles.section}>
       <Pressable
-        style={styles.header}
+        style={[styles.header, { backgroundColor: theme.bg, borderBottomColor: theme.border }]}
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityLabel={`${aisle.name}, ${checkedCount} of ${total} checked, ${isCollapsed ? 'collapsed' : 'expanded'}`}
       >
-        <Text style={styles.chevron}>{isCollapsed ? '▶' : '▼'}</Text>
-        <Text style={styles.aisleName}>{aisle.name}</Text>
-        <Text style={styles.count}>
+        <Text style={[styles.chevron, { color: theme.text }]}>{isCollapsed ? '▶' : '▼'}</Text>
+        <Text style={[styles.aisleName, { color: theme.text }]}>{aisle.name}</Text>
+        <Text style={[styles.count, { color: theme.text }]}>
           {checkedCount} of {total} ✓
         </Text>
       </Pressable>
@@ -90,13 +92,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#dbeafe',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#bfdbfe',
   },
   chevron: {
     fontSize: 10,
-    color: '#1d4ed8',
     marginRight: 8,
     width: 12,
   },
@@ -104,11 +103,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#1d4ed8',
     letterSpacing: 0.2,
   },
   count: {
     fontSize: 13,
-    color: '#3b82f6',
   },
 });

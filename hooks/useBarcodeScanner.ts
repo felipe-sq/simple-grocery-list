@@ -10,7 +10,7 @@ export function useBarcodeScanner(householdId: string | null) {
       if (householdId) {
         const { data: historyRows } = await supabase
           .from('item_history')
-          .select('name, store_id, aisle_id, aisle:aisles(id, name, sort_order)')
+          .select('name, store_id, aisle_id, aisle:aisles(id, name, sort_order, color)')
           .eq('household_id', householdId)
           .eq('barcode', barcode)
           .order('purchased_at', { ascending: false })
@@ -18,7 +18,7 @@ export function useBarcodeScanner(householdId: string | null) {
 
         if (historyRows && historyRows.length > 0) {
           const row = historyRows[0];
-          const aisleArr = row.aisle as unknown as Pick<Aisle, 'id' | 'name' | 'sort_order'>[];
+          const aisleArr = row.aisle as unknown as Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'>[];
           return {
             barcode,
             name: row.name as string,

@@ -7,7 +7,7 @@ import type { Aisle, GroceryItemWithAisle } from '@/types';
 type Props = {
   item: GroceryItemWithAisle | null;
   householdId: string;
-  onMove: (aisle: Pick<Aisle, 'id' | 'name' | 'sort_order'>) => void;
+  onMove: (aisle: Pick<Aisle, 'id' | 'name' | 'sort_order' | 'color'>) => void;
   onClose: () => void;
 };
 
@@ -36,7 +36,7 @@ export function MoveAisleSheet({ item, householdId, onMove, onClose }: Props) {
               {index > 0 && <View style={styles.divider} />}
               <Pressable
                 style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
-                onPress={() => { onMove({ id: aisle.id, name: aisle.name, sort_order: aisle.sort_order }); onClose(); }}
+                onPress={() => { onMove({ id: aisle.id, name: aisle.name, sort_order: aisle.sort_order, color: aisle.color }); onClose(); }}
                 accessibilityRole="button"
                 accessibilityLabel={`Move to ${aisle.name}`}
               >
