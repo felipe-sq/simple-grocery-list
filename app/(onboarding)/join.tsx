@@ -13,6 +13,7 @@ export default function JoinHousehold() {
   const initialToken = Array.isArray(tokenParam) ? (tokenParam[0] ?? '') : (tokenParam ?? '');
   const [input, setInput] = useState(initialToken);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { session, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -41,13 +42,15 @@ export default function JoinHousehold() {
   async function handleJoin() {
     const trimmed = input.trim();
     if (!trimmed) {
-      Alert.alert('Missing token', 'Please paste your invite link or token.');
+      setError('Please paste your invite link or token.');
       return;
     }
     if (!session) {
       Alert.alert('Not signed in', 'Please sign in before joining a household.');
       return;
     }
+
+    setError(null);
 
     // Extract token from a full URL (any scheme) or use the raw token string.
     let token = trimmed;
@@ -61,12 +64,11 @@ export default function JoinHousehold() {
       await doJoin(token, session);
     } catch {
       setLoading(false);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      setError('Something went wrong. Please try again.');
     }
   }
 
   async function doJoin(token: string, activeSession: NonNullable<typeof session>) {
-
     const { data: inviteData, error: fetchError } = await supabase
       .from('household_invites')
       .select('id, household_id, expires_at, used_at')
@@ -81,22 +83,19 @@ export default function JoinHousehold() {
 
     if (fetchError || !invite) {
       setLoading(false);
-      Alert.alert('Invalid link', 'This invite link is invalid. Please check and try again.');
+      setError('This invite link is invalid. Please check and try again.');
       return;
     }
 
     if (invite.used_at) {
       setLoading(false);
-      Alert.alert('Link already used', 'This invite link has already been used.');
+      setError('This invite link has already been used. Ask for a new one.');
       return;
     }
 
     if (new Date(invite.expires_at) < new Date()) {
       setLoading(false);
-      Alert.alert(
-        'Link expired',
-        'This invite link has expired. Ask a household member to generate a new one.',
-      );
+      setError('This invite link has expired. Ask a household member to generate a new one.');
       return;
     }
 
@@ -111,7 +110,7 @@ export default function JoinHousehold() {
         router.replace('/(app)');
         return;
       }
-      Alert.alert('Error', 'Failed to join household. Please try again.');
+      setError('Failed to join household. Please try again.');
       return;
     }
 
@@ -169,13 +168,18 @@ export default function JoinHousehold() {
         style={[styles.input, styles.multilineInput]}
         placeholder="Paste invite link or token"
         value={input}
-        onChangeText={setInput}
+        onChangeText={(text) => {
+          setInput(text);
+          if (error) setError(null);
+        }}
         autoCapitalize="none"
         autoCorrect={false}
         multiline
         numberOfLines={3}
         editable={!loading}
       />
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <Pressable
         style={[styles.button, loading && styles.buttonDisabled]}
@@ -220,6 +224,11 @@ const styles = StyleSheet.create({
   multilineInput: {
     height: 90,
     textAlignVertical: 'top',
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 14,
+    marginBottom: 12,
   },
   button: {
     backgroundColor: '#2563eb',
