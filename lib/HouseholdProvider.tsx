@@ -49,7 +49,6 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       }
       if (cancelled) return;
       const firstRow = (rows as { household_id: string }[] | null)?.[0] ?? null;
-      console.log('[HouseholdProvider] householdId resolved:', firstRow?.household_id ?? null);
       setHouseholdId(firstRow?.household_id ?? null);
       setLoading(false);
     }

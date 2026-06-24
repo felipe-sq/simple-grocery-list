@@ -16,7 +16,8 @@ export default function Root({ children }: { children: ReactNode }) {
         {/* PWA manifest */}
         <link rel="manifest" href="/manifest.json" />
 
-        {/* iOS standalone mode — Safari ignores the manifest display field */}
+        {/* Standalone PWA mode: mobile-web-app-capable for Chrome/Android, apple- for iOS Safari */}
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Grocery List" />
