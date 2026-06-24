@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Linking from 'expo-linking';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -45,19 +44,28 @@ export default function JoinHousehold() {
       Alert.alert('Missing token', 'Please paste your invite link or token.');
       return;
     }
-    if (!session) return;
+    if (!session) {
+      Alert.alert('Not signed in', 'Please sign in before joining a household.');
+      return;
+    }
 
-    // Accept either the full deep-link URL or the raw token string.
+    // Extract token from a full URL (any scheme) or use the raw token string.
     let token = trimmed;
-    if (trimmed.includes('://') || trimmed.includes('?token=')) {
-      const parsed = Linking.parse(trimmed);
-      const parsedToken = parsed.queryParams?.token;
-      if (typeof parsedToken === 'string' && parsedToken) {
-        token = parsedToken;
-      }
+    const tokenMatch = trimmed.match(/[?&]token=([^&#]+)/);
+    if (tokenMatch?.[1]) {
+      token = decodeURIComponent(tokenMatch[1]);
     }
 
     setLoading(true);
+    try {
+      await doJoin(token, session);
+    } catch {
+      setLoading(false);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
+  }
+
+  async function doJoin(token: string, activeSession: NonNullable<typeof session>) {
 
     const { data: inviteData, error: fetchError } = await supabase
       .from('household_invites')
@@ -94,7 +102,7 @@ export default function JoinHousehold() {
 
     const { error: joinError } = await supabase
       .from('household_members')
-      .insert({ household_id: invite.household_id, user_id: session.user.id });
+      .insert({ household_id: invite.household_id, user_id: activeSession.user.id });
 
     if (joinError) {
       setLoading(false);
@@ -110,7 +118,7 @@ export default function JoinHousehold() {
     // Mark invite as used.
     await supabase
       .from('household_invites')
-      .update({ used_at: new Date().toISOString(), used_by: session.user.id })
+      .update({ used_at: new Date().toISOString(), used_by: activeSession.user.id })
       .eq('id', invite.id);
 
     setLoading(false);
