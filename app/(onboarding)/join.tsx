@@ -17,23 +17,27 @@ export default function JoinHousehold() {
   const { session, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Handle unauthenticated deep-link: save token then redirect to sign-in.
+  // Handle unauthenticated deep-link with no token: redirect to sign-in.
   useEffect(() => {
     if (authLoading) return;
     if (session) return;
-
     const rawInput = (
       Array.isArray(tokenParam) ? (tokenParam[0] ?? '') : (tokenParam ?? '')
     ).trim();
-
-    if (rawInput) {
-      AsyncStorage.setItem(PENDING_JOIN_TOKEN_KEY, rawInput).then(() => {
-        router.replace('/(auth)/sign-in');
-      });
-    } else {
+    if (!rawInput) {
       router.replace('/(auth)/sign-in');
     }
   }, [session, authLoading, tokenParam, router]);
+
+  async function saveTokenAndNavigate(destination: '/(auth)/sign-in' | '/(auth)/sign-up') {
+    const rawInput = (
+      Array.isArray(tokenParam) ? (tokenParam[0] ?? '') : (tokenParam ?? '')
+    ).trim();
+    if (rawInput) {
+      await AsyncStorage.setItem(PENDING_JOIN_TOKEN_KEY, rawInput);
+    }
+    router.replace(destination);
+  }
 
   async function handleJoin() {
     const trimmed = input.trim();
@@ -113,9 +117,38 @@ export default function JoinHousehold() {
     router.replace('/(app)');
   }
 
-  // Don't render the form while auth state is resolving.
-  if (authLoading || !session) {
-    return null;
+  if (authLoading) return null;
+
+  if (!session) {
+    const hasToken = (
+      Array.isArray(tokenParam) ? (tokenParam[0] ?? '') : (tokenParam ?? '')
+    ).trim().length > 0;
+    if (!hasToken) return null;
+
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>You've been invited</Text>
+        <Text style={styles.description}>
+          Sign in to an existing account or create a new one to join the household.
+        </Text>
+        <Pressable
+          style={styles.button}
+          onPress={() => saveTokenAndNavigate('/(auth)/sign-up')}
+          accessibilityRole="button"
+          accessibilityLabel="Create a new account"
+        >
+          <Text style={styles.buttonText}>Create Account</Text>
+        </Pressable>
+        <Pressable
+          style={styles.buttonSecondary}
+          onPress={() => saveTokenAndNavigate('/(auth)/sign-in')}
+          accessibilityRole="button"
+          accessibilityLabel="Sign in to existing account"
+        >
+          <Text style={styles.buttonSecondaryText}>Sign In</Text>
+        </Pressable>
+      </View>
+    );
   }
 
   return (
@@ -154,11 +187,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop: 32,
   },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   description: {
     fontSize: 15,
     color: '#6b7280',
     marginBottom: 24,
     lineHeight: 22,
+    textAlign: 'center',
   },
   input: {
     borderWidth: 1,
@@ -178,12 +218,25 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 14,
     alignItems: 'center',
+    marginBottom: 12,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
     color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  buttonSecondary: {
+    borderWidth: 1.5,
+    borderColor: '#2563eb',
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+  },
+  buttonSecondaryText: {
+    color: '#2563eb',
     fontWeight: '600',
     fontSize: 16,
   },
