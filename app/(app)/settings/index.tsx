@@ -58,7 +58,11 @@ export default function SettingsScreen() {
       return;
     }
 
-    const url = Linking.createURL('join', { queryParams: { token } });
+    const appUrl = process.env.EXPO_PUBLIC_APP_URL?.replace(/\/$/, '');
+    const url = appUrl
+      ? `${appUrl}/join?token=${encodeURIComponent(token)}`
+      : Linking.createURL('join', { queryParams: { token } });
+
     await Clipboard.setStringAsync(url);
     showToast('Invite link copied to clipboard!');
   }
@@ -70,75 +74,75 @@ export default function SettingsScreen() {
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-      {householdName !== null && (
+        {householdName !== null && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>HOUSEHOLD</Text>
+            <Text style={styles.householdName}>{householdName}</Text>
+          </View>
+        )}
+
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>HOUSEHOLD</Text>
-          <Text style={styles.householdName}>{householdName}</Text>
-        </View>
-      )}
-
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>INVITE</Text>
-        <Text style={styles.description}>
-          Generate a single-use invite link valid for 48 hours. Anyone with the link can join your
-          household.
-        </Text>
-        <Pressable
-          style={[styles.button, generating && styles.buttonDisabled]}
-          onPress={handleGenerateInvite}
-          disabled={generating}
-          accessibilityRole="button"
-          accessibilityLabel={generating ? 'Generating invite link' : 'Generate Invite Link'}
-          accessibilityState={{ disabled: generating }}
-        >
-          <Text style={styles.buttonText}>
-            {generating ? 'Generating…' : 'Generate Invite Link'}
+          <Text style={styles.sectionLabel}>INVITE</Text>
+          <Text style={styles.description}>
+            Generate a single-use invite link valid for 48 hours. Anyone with the link can join your
+            household.
           </Text>
-        </Pressable>
-      </View>
+          <Pressable
+            style={[styles.button, generating && styles.buttonDisabled]}
+            onPress={handleGenerateInvite}
+            disabled={generating}
+            accessibilityRole="button"
+            accessibilityLabel={generating ? 'Generating invite link' : 'Generate Invite Link'}
+            accessibilityState={{ disabled: generating }}
+          >
+            <Text style={styles.buttonText}>
+              {generating ? 'Generating…' : 'Generate Invite Link'}
+            </Text>
+          </Pressable>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>STORES & AISLES</Text>
-        <Text style={styles.description}>
-          Configure your stores and aisles for your grocery lists.
-        </Text>
-        <Pressable
-          style={styles.button}
-          onPress={() => {
-            router.push('/(app)/settings/stores');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Manage Stores and Aisles"
-        >
-          <Text style={styles.buttonText}>Manage Stores & Aisles</Text>
-        </Pressable>
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>STORES & AISLES</Text>
+          <Text style={styles.description}>
+            Configure your stores and aisles for your grocery lists.
+          </Text>
+          <Pressable
+            style={styles.button}
+            onPress={() => {
+              router.push('/(app)/settings/stores');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Manage Stores and Aisles"
+          >
+            <Text style={styles.buttonText}>Manage Stores & Aisles</Text>
+          </Pressable>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>SUGGESTIONS</Text>
-        <Text style={styles.description}>
-          Smart item suggestions based on your household's purchase history.
-        </Text>
-        <Pressable
-          style={styles.button}
-          onPress={() => router.push('/(app)/suggestions')}
-          accessibilityRole="button"
-          accessibilityLabel="View Suggestions"
-        >
-          <Text style={styles.buttonText}>View Suggestions</Text>
-        </Pressable>
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>SUGGESTIONS</Text>
+          <Text style={styles.description}>
+            Smart item suggestions based on your household's purchase history.
+          </Text>
+          <Pressable
+            style={styles.button}
+            onPress={() => router.push('/(app)/suggestions')}
+            accessibilityRole="button"
+            accessibilityLabel="View Suggestions"
+          >
+            <Text style={styles.buttonText}>View Suggestions</Text>
+          </Pressable>
+        </View>
 
-      <View style={styles.section}>
-        <Pressable
-          style={styles.signOutButton}
-          onPress={handleSignOut}
-          accessibilityRole="button"
-          accessibilityLabel="Sign Out"
-        >
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </Pressable>
-      </View>
+        <View style={styles.section}>
+          <Pressable
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+            accessibilityRole="button"
+            accessibilityLabel="Sign Out"
+          >
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </Pressable>
+        </View>
       </ScrollView>
       {toastMsg !== null && (
         <View style={styles.toast}>
