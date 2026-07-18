@@ -1,11 +1,12 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AislePicker } from '@/components/AislePicker';
 import { SheetModal, SheetScrollView } from '@/components/SheetModal';
 import { SuggestionsDropdown } from '@/components/SuggestionsDropdown';
 import { useAisles } from '@/hooks/useAisles';
 import { useItemSuggestions } from '@/hooks/useItemSuggestions';
+import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 import type { AddItemInput, Aisle, BarcodePrefill, Store, SuggestionResult } from '@/types';
 
@@ -113,7 +114,7 @@ export const AddItemSheet = forwardRef<AddItemSheetHandle, Props>(function AddIt
 
   const handleClose = useCallback(() => {
     if (isDirtyRef.current) {
-      Alert.alert('Discard this item?', undefined, [
+      alert('Discard this item?', undefined, [
         { text: 'Keep Editing', style: 'cancel' },
         { text: 'Discard', style: 'destructive', onPress: () => { resetForm(); onClose(); } },
       ]);

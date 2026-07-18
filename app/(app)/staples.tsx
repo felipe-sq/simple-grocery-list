@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +18,7 @@ import { useCopyStaplesToList, type AisleMismatch } from '@/hooks/useCopyStaples
 import { useHousehold } from '@/hooks/useHousehold';
 import { useStapleItems } from '@/hooks/useStapleItems';
 import { useStores } from '@/hooks/useStores';
+import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 import type { Aisle, StapleGroup, StapleItemWithDetails } from '@/types';
 
@@ -163,7 +163,7 @@ export default function StaplesScreen() {
     const storeName = group?.store?.name ?? 'this group';
     const inStoreIds = group?.items.map((i) => i.id) ?? [];
 
-    Alert.alert(
+    alert(
       'Select items',
       undefined,
       [
@@ -213,7 +213,7 @@ export default function StaplesScreen() {
       setCopyLoading(false);
 
       if (result.error) {
-        Alert.alert('Error', result.error);
+        alert('Error', result.error);
         return;
       }
 

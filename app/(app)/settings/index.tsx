@@ -1,11 +1,12 @@
 import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useHousehold } from '@/hooks/useHousehold';
+import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 
 export default function SettingsScreen() {
@@ -54,7 +55,7 @@ export default function SettingsScreen() {
     setGenerating(false);
 
     if (error) {
-      Alert.alert('Error', 'Failed to generate invite link. Please try again.');
+      alert('Error', 'Failed to generate invite link. Please try again.');
       return;
     }
 

@@ -10,6 +10,7 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
+import { AlertHost } from '@/components/AlertHost';
 import { useAuth } from '@/hooks/useAuth';
 import { useHousehold } from '@/hooks/useHousehold';
 import { HouseholdProvider } from '@/lib/HouseholdProvider';
@@ -40,6 +41,7 @@ export default function RootLayout() {
         <HouseholdProvider>
           <StoresProvider>
             <RootLayoutNav fontsLoaded={fontsLoaded} />
+            <AlertHost />
           </StoresProvider>
         </HouseholdProvider>
       </BottomSheetModalProvider>

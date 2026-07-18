@@ -1,6 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NestableScrollContainer } from 'react-native-draggable-flatlist';
 import { Stack } from 'expo-router';
 
@@ -19,6 +19,7 @@ import { useGroceryItems } from '@/hooks/useGroceryItems';
 import { useHousehold } from '@/hooks/useHousehold';
 import { usePresence } from '@/hooks/usePresence';
 import { useStores } from '@/hooks/useStores';
+import { alert } from '@/lib/alert';
 import { parseVoiceInput } from '@/lib/parseVoiceInput';
 import type { AisleGroup, BarcodePrefill, GroceryItemWithAisle, ParsedVoiceItem } from '@/types';
 
@@ -132,7 +133,7 @@ export function StoreView({ storeId }: Props) {
 
   function handleEndTripPress() {
     if (!hasChecked) {
-      Alert.alert(
+      alert(
         'Nothing checked off yet',
         "Nothing's been checked off yet. Check off items as you shop, then end your trip.",
         [{ text: 'OK' }],

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AislePicker } from '@/components/AislePicker';
 import { SheetModal, SheetScrollView } from '@/components/SheetModal';
 import { useAisles } from '@/hooks/useAisles';
+import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 import type { Aisle, EditItemInput, GroceryItemWithAisle, Store } from '@/types';
 
@@ -59,7 +60,7 @@ export function EditItemSheet({ item, allStores, householdId, onSubmit, onClose 
 
   const handleClose = useCallback(() => {
     if (isDirtyRef.current) {
-      Alert.alert('Discard changes?', undefined, [
+      alert('Discard changes?', undefined, [
         { text: 'Keep Editing', style: 'cancel' },
         { text: 'Discard', style: 'destructive', onPress: onClose },
       ]);

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Platform,
   Pressable,
@@ -15,6 +14,7 @@ import {
 import { StoreSection } from '@/components/StoreSection';
 import { useHousehold } from '@/hooks/useHousehold';
 import { useStores } from '@/hooks/useStores';
+import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 import type { Aisle, Store } from '@/types';
 
@@ -164,7 +164,7 @@ export default function StoresSettingsScreen() {
       }
 
       if (otherAisles.length === 0) {
-        Alert.alert(
+        alert(
           'Cannot delete',
           `Move items out of "${aisleName}" first, or delete the items before removing this aisle.`,
           [{ text: 'OK' }],
@@ -173,7 +173,7 @@ export default function StoresSettingsScreen() {
       }
 
       // Items exist and there are other aisles to move them to
-      Alert.alert(
+      alert(
         `"${aisleName}" has ${itemCount} item${itemCount !== 1 ? 's' : ''}. Where should they go?`,
         undefined,
         [
@@ -191,7 +191,7 @@ export default function StoresSettingsScreen() {
 
   function handleStoreDeleteRequest(storeId: string): void {
     if (stores.length <= 1) {
-      Alert.alert('Cannot delete', 'You must keep at least one store.');
+      alert('Cannot delete', 'You must keep at least one store.');
       return;
     }
     const store = stores.find((s) => s.id === storeId);
@@ -231,7 +231,7 @@ export default function StoresSettingsScreen() {
       .eq('id', deleteModalTarget.storeId);
     setDeleting(false);
     if (error) {
-      Alert.alert('Error', error.message);
+      alert('Error', error.message);
       return;
     }
     setDeleteModalTarget(null);

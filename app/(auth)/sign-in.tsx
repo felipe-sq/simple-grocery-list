@@ -1,8 +1,9 @@
 import * as Linking from 'expo-linking';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 
 type Mode = 'signin' | 'forgot' | 'sent';
@@ -15,18 +16,18 @@ export default function SignIn() {
 
   async function handleSignIn() {
     if (!email.trim() || !password) {
-      Alert.alert('Missing fields', 'Please enter your email and password.');
+      alert('Missing fields', 'Please enter your email and password.');
       return;
     }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
-    if (error) Alert.alert('Sign in failed', error.message);
+    if (error) alert('Sign in failed', error.message);
   }
 
   async function handleForgotPassword() {
     if (!email.trim()) {
-      Alert.alert('Email required', 'Please enter your email address.');
+      alert('Email required', 'Please enter your email address.');
       return;
     }
     setLoading(true);
@@ -34,7 +35,7 @@ export default function SignIn() {
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
     setLoading(false);
     if (error) {
-      Alert.alert('Error', error.message);
+      alert('Error', error.message);
     } else {
       setMode('sent');
     }

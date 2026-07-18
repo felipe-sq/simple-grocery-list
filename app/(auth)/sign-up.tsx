@@ -1,7 +1,8 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 
 export default function SignUp() {
@@ -11,24 +12,24 @@ export default function SignUp() {
 
   async function handleSignUp() {
     if (!email.trim() || !password) {
-      Alert.alert('Missing fields', 'Please enter your email and password.');
+      alert('Missing fields', 'Please enter your email and password.');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Weak password', 'Password must be at least 6 characters.');
+      alert('Weak password', 'Password must be at least 6 characters.');
       return;
     }
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
     if (error) {
       setLoading(false);
-      Alert.alert('Sign up failed', error.message);
+      alert('Sign up failed', error.message);
       return;
     }
     if (!data.session) {
       // Email confirmation is required — session arrives after the user confirms.
       setLoading(false);
-      Alert.alert('Check your email', `We sent a confirmation link to ${email.trim()}.`);
+      alert('Check your email', `We sent a confirmation link to ${email.trim()}.`);
       return;
     }
     // Session returned immediately (email confirmation disabled in Supabase dashboard).

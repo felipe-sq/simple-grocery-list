@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
+import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 
 export const PENDING_JOIN_TOKEN_KEY = 'pendingJoinToken';
@@ -46,7 +47,7 @@ export default function JoinHousehold() {
       return;
     }
     if (!session) {
-      Alert.alert('Not signed in', 'Please sign in before joining a household.');
+      alert('Not signed in', 'Please sign in before joining a household.');
       return;
     }
 

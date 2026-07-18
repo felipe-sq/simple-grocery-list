@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
+import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 
 export default function CreateHousehold() {
@@ -13,7 +14,7 @@ export default function CreateHousehold() {
 
   async function handleCreate() {
     if (!name.trim()) {
-      Alert.alert('Name required', 'Please enter a name for your household.');
+      alert('Name required', 'Please enter a name for your household.');
       return;
     }
     if (!session) return;
@@ -52,7 +53,7 @@ export default function CreateHousehold() {
 
     if (householdError) {
       setLoading(false);
-      Alert.alert('Error', 'Failed to create household. Please try again.');
+      alert('Error', 'Failed to create household. Please try again.');
       return;
     }
 
@@ -62,7 +63,7 @@ export default function CreateHousehold() {
 
     if (memberError) {
       setLoading(false);
-      Alert.alert('Error', 'Failed to join household. Please try again.');
+      alert('Error', 'Failed to join household. Please try again.');
       return;
     }
 
