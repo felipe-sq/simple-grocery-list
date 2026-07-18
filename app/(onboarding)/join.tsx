@@ -69,6 +69,13 @@ export default function JoinHousehold() {
   }
 
   async function doJoin(token: string, activeSession: NonNullable<typeof session>) {
+    // Ensure the profile row exists — household_members has a FK to profiles(id)
+    // and the upsert in the root layout is fire-and-forget (may not have settled yet).
+    await supabase.from('profiles').upsert(
+      { id: activeSession.user.id, name: activeSession.user.email?.split('@')[0] ?? 'User' },
+      { onConflict: 'id', ignoreDuplicates: true },
+    );
+
     const { data: inviteData, error: fetchError } = await supabase
       .from('household_invites')
       .select('id, household_id, expires_at, used_at')
