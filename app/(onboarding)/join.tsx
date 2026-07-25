@@ -1,15 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStyles } from '@/hooks/useAuthStyles';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 
 export const PENDING_JOIN_TOKEN_KEY = 'pendingJoinToken';
 
 export default function JoinHousehold() {
+  const styles = useAuthStyles();
+  const colors = useThemeColors();
   const { token: tokenParam } = useLocalSearchParams<{ token?: string | string[] }>();
   const initialToken = Array.isArray(tokenParam) ? (tokenParam[0] ?? '') : (tokenParam ?? '');
   const [input, setInput] = useState(initialToken);
@@ -141,7 +145,7 @@ export default function JoinHousehold() {
     if (!hasToken) return null;
 
     return (
-      <View style={styles.container}>
+      <View style={styles.topContainer}>
         <Text style={styles.title}>You've been invited</Text>
         <Text style={styles.description}>
           Sign in to an existing account or create a new one to join the household.
@@ -167,7 +171,7 @@ export default function JoinHousehold() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.topContainer}>
       <Text style={styles.description}>
         Paste the invite link (or just the token) shared by a household member.
       </Text>
@@ -175,6 +179,7 @@ export default function JoinHousehold() {
       <TextInput
         style={[styles.input, styles.multilineInput]}
         placeholder="Paste invite link or token"
+        placeholderTextColor={colors.mutedForeground}
         value={input}
         onChangeText={(text) => {
           setInput(text);
@@ -200,69 +205,3 @@ export default function JoinHousehold() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: '#fff',
-    paddingTop: 32,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 15,
-    color: '#6b7280',
-    marginBottom: 24,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    backgroundColor: '#f9fafb',
-  },
-  multilineInput: {
-    height: 90,
-    textAlignVertical: 'top',
-  },
-  errorText: {
-    color: '#dc2626',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  button: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  buttonSecondary: {
-    borderWidth: 1.5,
-    borderColor: '#2563eb',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-  },
-  buttonSecondaryText: {
-    color: '#2563eb',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-});

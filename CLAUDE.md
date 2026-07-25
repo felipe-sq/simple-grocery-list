@@ -23,14 +23,13 @@ Full spec: see `docs/prd.md`, `docs/ux-flows.md`, `docs/tasks.md`
 | Framework | Expo SDK (latest) + Expo Router | File-based routing; use `app/` dir |
 | UI | React Native core components | No UI kit — custom components only |
 | DB / Auth / Realtime | `@supabase/supabase-js` v2 | Use service role key only in Edge Functions |
-| Bottom sheets | `@gorhom/bottom-sheet` | For Add Item and all modal sheets |
-| Drag-to-reorder | `react-native-draggable-flatlist` | Aisles + items within aisles |
+| Gestures | `react-native-gesture-handler` | Swipe-to-delete on item rows |
 | Offline storage | `react-native-mmkv` (native) / `idb` (web) | Offline mutation queue |
 | Network status | `@react-native-community/netinfo` | Reconnect trigger for offline flush |
 | Camera / Barcode | `expo-camera` | Barcode scanning; works on web via WebRTC |
 | Speech (iOS) | `expo-speech-recognition` | Wraps SFSpeechRecognizer |
 | Speech (Web) | `window.SpeechRecognition` | Use platform file: `speech.web.ts` |
-| Animations | `react-native-reanimated` | Required by draggable-flatlist |
+| Animations | `react-native-reanimated` | Layout animations |
 
 ---
 
@@ -39,24 +38,22 @@ Full spec: see `docs/prd.md`, `docs/ux-flows.md`, `docs/tasks.md`
 ```
 /
 ├── app/                    # Expo Router pages
-│   ├── (auth)/             # Auth screens (sign-in, sign-up)
+│   ├── (auth)/             # Auth screens (sign-in, sign-up, reset-password)
+│   ├── (onboarding)/       # Create/join household gate
 │   ├── (app)/              # Main app (requires auth)
-│   │   ├── _layout.tsx     # Tab bar layout (dynamic store tabs)
-│   │   ├── store/
-│   │   │   └── [storeId].tsx
-│   │   ├── suggestions.tsx
-│   │   ├── staples.tsx
-│   │   └── settings/
-│   │       └── stores.tsx
+│   │   ├── _layout.tsx     # Stack layout (no tab bar)
+│   │   ├── index.tsx       # My Lists (cards)
+│   │   ├── list/
+│   │   │   └── [id].tsx    # List detail (items, tags, completed section)
+│   │   └── settings.tsx    # Account, household members, invite, sign out
 ├── components/             # Shared UI components
 ├── lib/
 │   ├── supabase.ts         # Supabase client singleton
-│   ├── offlineQueue.ts     # Offline mutation queue
-│   └── rules/              # Suggestion rules engine (Edge Function source)
+│   └── offlineQueue.ts     # Offline mutation queue
 ├── supabase/
 │   ├── migrations/         # SQL migration files
 │   └── functions/
-│       └── suggestions/    # Edge Function (Deno)
+│       └── suggestions/    # Edge Function (Deno) — dormant, not used by the app
 ├── hooks/                  # Custom React hooks
 ├── types/                  # Shared TypeScript types
 ├── docs/                   # PRD, UX flows, task breakdown
@@ -102,26 +99,24 @@ Full spec: see `docs/prd.md`, `docs/ux-flows.md`, `docs/tasks.md`
 - **Never** use `any` type — find the correct type or create one in `types/`
 - **Never** delete existing migration files — always create new migrations
 - **Never** bypass RLS by using the service role key on the client
-- **Never** write to `item_history` directly from the UI — only via End Trip (T-013) or add-item flow (T-011)
-- **Never** skip the duplicate check when adding items to a grocery list or copying from staples
+- **Never** write to `item_history` from the UI — the table is dormant (suggestions feature removed from the app)
+- **Never** skip the duplicate check when adding items to a grocery list
 
 ---
 
 ## Database
 
 Schema is in `supabase/migrations/`. Key tables:
-- `grocery_items` — active shopping list items (per store)
-- `staple_items` — persistent household staples
-- `item_history` — purchase history; source of truth for suggestions
-- `suggestion_cache` — cached rules engine output (JSONB)
+- `lists` — named grocery lists (primary container; household-scoped)
+- `grocery_items` — active shopping list items (per list; optional free-text `tag`)
 - `household_invites` — single-use invite tokens (48hr expiry)
+- Dormant (kept in DB, not used by the app): `stores`, `aisles`, `staple_items`, `item_history`, `suggestion_cache`, `suggestion_dismissals`
 
-**Duplicate rule:** a `grocery_item` with the same `name` (case-insensitive) and `store_id` as an existing unchecked item must be hard-blocked — at both the DB level (unique partial index) and UI level.
+**Duplicate rule:** a `grocery_item` with the same `name` (case-insensitive) and `list_id` as an existing unchecked item must be hard-blocked — at both the DB level (unique partial index) and UI level.
 
 ```sql
--- Add this to migration for grocery_items:
 CREATE UNIQUE INDEX grocery_items_no_duplicate_unchecked
-ON grocery_items (household_id, store_id, LOWER(name))
+ON grocery_items (list_id, LOWER(name))
 WHERE checked = false;
 ```
 

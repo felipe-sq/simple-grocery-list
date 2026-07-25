@@ -1,14 +1,18 @@
 import * as Linking from 'expo-linking';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
+import { useAuthStyles } from '@/hooks/useAuthStyles';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 
 type Mode = 'signin' | 'forgot' | 'sent';
 
 export default function SignIn() {
+  const styles = useAuthStyles();
+  const colors = useThemeColors();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -63,6 +67,7 @@ export default function SignIn() {
         <TextInput
           style={styles.input}
           placeholder="Email"
+        placeholderTextColor={colors.mutedForeground}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -95,6 +100,7 @@ export default function SignIn() {
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor={colors.mutedForeground}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -107,6 +113,7 @@ export default function SignIn() {
       <TextInput
         style={styles.input}
         placeholder="Password"
+        placeholderTextColor={colors.mutedForeground}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -135,52 +142,3 @@ export default function SignIn() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  body: {
-    fontSize: 15,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    backgroundColor: '#f9fafb',
-  },
-  button: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  linkBtn: { alignItems: 'center', marginBottom: 12 },
-  link: {
-    textAlign: 'center',
-    color: '#2563eb',
-    fontSize: 14,
-  },
-});

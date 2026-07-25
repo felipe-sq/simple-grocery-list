@@ -1,35 +1,41 @@
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { SheetModal, SheetScrollView } from '@/components/SheetModal';
-import { VoiceItemCard, type ReviewItemState } from '@/components/VoiceItemCard';
-import { useAisles } from '@/hooks/useAisles';
-import { supabase } from '@/lib/supabase';
-import type { AddItemInput, ParsedVoiceItem, Store } from '@/types';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import { useThemedStyles } from '@/hooks/useThemedStyles';
+import type { AddItemInput, ParsedVoiceItem } from '@/types';
 
-type Props = {
+interface ReviewItemState {
+  key: string;
+  name: string;
+  qty: string;
+  unit: string;
+  checked: boolean;
+  parsed: boolean;
+  error: string | null;
+}
+
+interface Props {
   visible: boolean;
   onClose: () => void;
-  store: Store;
-  householdId: string;
+  // Tag applied to every added item (the list's active filter tag, if any).
+  tag: string | null;
   items: ParsedVoiceItem[];
   addItem: (data: AddItemInput) => Promise<{ error: string | null }>;
-};
+}
 
-export function VoiceReviewSheet({ visible, onClose, store, householdId, items, addItem }: Props) {
-  const { aisles, createAisle } = useAisles(store.id, householdId);
+export function VoiceReviewSheet({ visible, onClose, tag, items, addItem }: Props) {
+  const colors = useThemeColors();
   const [reviewItems, setReviewItems] = useState<ReviewItemState[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const lookupDoneRef = useRef(false);
 
   useEffect(() => {
-    if (!visible) { lookupDoneRef.current = false; return; }
+    if (!visible) return;
     const ts = Date.now();
     const initial: ReviewItemState[] = items.map((item, idx) => ({
       key: `${ts}-${idx}`,
       name: item.name,
-      aisleId: null,
-      aisle: null,
       qty: String(item.qty),
       unit: item.unit ?? '',
       checked: true,
@@ -45,48 +51,98 @@ export function VoiceReviewSheet({ visible, onClose, store, householdId, items, 
     return () => { active = false; };
   }, [visible, items]);
 
-  useEffect(() => {
-    if (!visible || lookupDoneRef.current || aisles.length === 0 || items.length === 0) return;
-    lookupDoneRef.current = true;
-    let cancelled = false;
-
-    async function doLookup() {
-      const results = await Promise.all(
-        items.map(async (item) => {
-          const { data } = await supabase
-            .from('item_history')
-            .select('aisle_id')
-            .eq('household_id', householdId)
-            .ilike('name', item.name.trim())
-            .order('purchased_at', { ascending: false })
-            .limit(1);
-          const row = (data as { aisle_id: string }[] | null)?.[0];
-          return { name: item.name, aisleId: row?.aisle_id ?? null };
-        }),
-      );
-      if (cancelled) return;
-      setReviewItems((prev) =>
-        prev.map((r) => {
-          const match = results.find((res) => res.name.toLowerCase() === r.name.toLowerCase());
-          if (!match?.aisleId) return r;
-          const found = aisles.find((a) => a.id === match.aisleId);
-          if (!found) return r;
-          return { ...r, aisleId: found.id, aisle: { id: found.id, name: found.name, sort_order: found.sort_order, color: found.color } };
-        }),
-      );
-    }
-
-    doLookup();
-    return () => { cancelled = true; };
-  }, [visible, aisles, items, householdId]);
+  const styles = useThemedStyles((c) => ({
+    header: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      paddingHorizontal: 20,
+      paddingBottom: 12,
+      borderBottomWidth: 0.5,
+      borderBottomColor: c.separator,
+    },
+    title: { flex: 1, fontSize: 18, fontWeight: '700' as const, color: c.foreground },
+    closeIcon: { fontSize: 18, color: c.mutedForeground },
+    subtitle: { fontSize: 14, color: c.mutedForeground, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 4 },
+    scrollContent: { paddingBottom: 16 },
+    card: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 10,
+      marginHorizontal: 16,
+      marginTop: 10,
+      padding: 12,
+      borderRadius: 10,
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 2,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      borderColor: c.border,
+    },
+    checkboxOn: { backgroundColor: c.accent, borderColor: c.accent },
+    checkMark: { color: c.accentForeground, fontSize: 13, fontWeight: '700' as const },
+    nameInput: { flex: 1, fontSize: 15, color: c.foreground, padding: 0 },
+    qtyInput: {
+      width: 44,
+      fontSize: 15,
+      color: c.foreground,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+      textAlign: 'center' as const,
+      padding: 2,
+    },
+    unitInput: {
+      width: 64,
+      fontSize: 15,
+      color: c.foreground,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+      padding: 2,
+    },
+    errorText: { fontSize: 12, color: c.destructive, marginHorizontal: 16, marginTop: 4 },
+    unparsedNote: { fontSize: 12, color: '#d97706', marginHorizontal: 16, marginTop: 4 },
+    footer: {
+      paddingHorizontal: 16,
+      paddingTop: 10,
+      paddingBottom: 16,
+      borderTopWidth: 0.5,
+      borderTopColor: c.separator,
+      backgroundColor: c.card,
+      flexDirection: 'row' as const,
+      gap: 10,
+    },
+    addBtn: {
+      flex: 1,
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingVertical: 14,
+      alignItems: 'center' as const,
+    },
+    addBtnDisabled: { opacity: 0.5 },
+    addBtnText: { color: c.primaryForeground, fontSize: 15, fontWeight: '600' as const },
+    cancelBtn: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 10,
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      alignItems: 'center' as const,
+    },
+    cancelBtnText: { color: c.mutedForeground, fontSize: 15 },
+  }));
 
   function handleUpdate(key: string, update: Partial<ReviewItemState>) {
     setReviewItems((prev) => prev.map((r) => (r.key === key ? { ...r, ...update } : r)));
   }
 
   const checkedItems = reviewItems.filter((r) => r.checked);
-  const hasUnknownAisle = checkedItems.some((r) => r.aisleId === null);
-  const btnDisabled = submitting || hasUnknownAisle || checkedItems.length === 0;
+  const btnDisabled = submitting || checkedItems.length === 0;
   const btnLabel =
     checkedItems.length === reviewItems.length
       ? `Add All (${checkedItems.length})`
@@ -98,29 +154,9 @@ export function VoiceReviewSheet({ visible, onClose, store, householdId, items, 
     let anyError = false;
 
     for (const r of checkedItems) {
-      if (!r.aisleId || !r.aisle) continue;
-
-      const { data: dupes } = await supabase
-        .from('grocery_items')
-        .select('id')
-        .eq('household_id', householdId)
-        .eq('store_id', store.id)
-        .eq('checked', false)
-        .ilike('name', r.name.trim())
-        .limit(1);
-
-      if (dupes && dupes.length > 0) {
-        const msg = `${r.name} is already on your ${store.name} list.`;
-        setReviewItems((prev) => prev.map((item) => (item.key === r.key ? { ...item, error: msg } : item)));
-        anyError = true;
-        continue;
-      }
-
       const result = await addItem({
         name: r.name.trim(),
-        storeId: store.id,
-        aisleId: r.aisleId,
-        aisle: r.aisle,
+        tag,
         quantity: r.qty ? parseFloat(r.qty) : null,
         unit: r.unit.trim() || null,
         notes: null,
@@ -155,91 +191,63 @@ export function VoiceReviewSheet({ visible, onClose, store, householdId, items, 
 
       <SheetScrollView contentContainerStyle={styles.scrollContent}>
         {reviewItems.map((item) => (
-          <VoiceItemCard
-            key={item.key}
-            item={item}
-            storeName={store.name}
-            aisles={aisles}
-            onUpdate={handleUpdate}
-            onCreateAisle={createAisle}
-          />
+          <View key={item.key}>
+            <View style={styles.card}>
+              <Pressable
+                style={[styles.checkbox, item.checked && styles.checkboxOn]}
+                onPress={() => handleUpdate(item.key, { checked: !item.checked })}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: item.checked }}
+                accessibilityLabel={`Include ${item.name}`}
+              >
+                {item.checked && <Text style={styles.checkMark}>✓</Text>}
+              </Pressable>
+              <TextInput
+                style={styles.nameInput}
+                value={item.name}
+                onChangeText={(t) => handleUpdate(item.key, { name: t })}
+                placeholder="Item name"
+                placeholderTextColor={colors.mutedForeground}
+              />
+              <TextInput
+                style={styles.qtyInput}
+                value={item.qty}
+                onChangeText={(t) => handleUpdate(item.key, { qty: t })}
+                keyboardType="numeric"
+                accessibilityLabel={`Quantity for ${item.name}`}
+              />
+              <TextInput
+                style={styles.unitInput}
+                value={item.unit}
+                onChangeText={(t) => handleUpdate(item.key, { unit: t })}
+                placeholder="unit"
+                placeholderTextColor={colors.mutedForeground}
+                accessibilityLabel={`Unit for ${item.name}`}
+              />
+            </View>
+            {!item.parsed && item.error === null && (
+              <Text style={styles.unparsedNote}>Couldn't parse — edit the name before adding.</Text>
+            )}
+            {item.error !== null && <Text style={styles.errorText}>{item.error}</Text>}
+          </View>
         ))}
       </SheetScrollView>
 
       <View style={styles.footer}>
-        {hasUnknownAisle && checkedItems.length > 0 && (
-          <Text style={styles.blockNote}>Assign all aisles before adding.</Text>
-        )}
-        <View style={styles.footerRow}>
-          <Pressable
-            style={[styles.addBtn, btnDisabled && styles.addBtnDisabled]}
-            onPress={handleAdd}
-            disabled={btnDisabled}
-            accessibilityRole="button"
-            accessibilityLabel={submitting ? 'Adding items' : btnLabel}
-            accessibilityState={{ disabled: btnDisabled }}
-          >
-            <Text style={styles.addBtnText}>{submitting ? 'Adding…' : btnLabel}</Text>
-          </Pressable>
-          <Pressable
-            style={styles.cancelBtn}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel and discard"
-          >
-            <Text style={styles.cancelBtnText}>Cancel</Text>
-          </Pressable>
-        </View>
+        <Pressable
+          style={[styles.addBtn, btnDisabled && styles.addBtnDisabled]}
+          onPress={handleAdd}
+          disabled={btnDisabled}
+          accessibilityRole="button"
+          accessibilityLabel={submitting ? 'Adding items' : btnLabel}
+          accessibilityState={{ disabled: btnDisabled }}
+        >
+          <Text style={styles.addBtnText}>{submitting ? 'Adding…' : btnLabel}</Text>
+        </Pressable>
+        <Pressable style={styles.cancelBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel and discard">
+          <Text style={styles.cancelBtnText}>Cancel</Text>
+        </Pressable>
       </View>
     </SheetModal>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e5e7eb',
-  },
-  title: { flex: 1, fontSize: 18, fontWeight: '700', color: '#111827' },
-  closeIcon: { fontSize: 18, color: '#6b7280' },
-  subtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 4,
-  },
-  scrollContent: { paddingBottom: 16 },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e5e7eb',
-    backgroundColor: '#fff',
-  },
-  blockNote: { fontSize: 13, color: '#d97706', textAlign: 'center', marginBottom: 8 },
-  footerRow: { flexDirection: 'row', gap: 10 },
-  addBtn: {
-    flex: 1,
-    backgroundColor: '#2563eb',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  addBtnDisabled: { backgroundColor: '#93c5fd' },
-  addBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  cancelBtn: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  cancelBtnText: { color: '#6b7280', fontSize: 15 },
-});

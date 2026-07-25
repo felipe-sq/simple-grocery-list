@@ -18,26 +18,17 @@ export type AddItemMutation = {
   groceryItem: {
     id: string;
     household_id: string;
-    store_id: string;
-    aisle_id: string;
+    list_id: string;
+    tag: string | null;
     name: string;
     quantity: number | null;
     unit: string | null;
     notes: string | null;
     sort_order: number;
-    source: 'manual' | 'barcode' | 'voice' | 'staples' | 'suggestion';
+    source: 'manual' | 'barcode' | 'voice';
     barcode: string | null;
     created_by: string;
     created_at: string;
-  };
-  historyItem: {
-    household_id: string;
-    name: string;
-    store_id: string;
-    aisle_id: string;
-    barcode: string | null;
-    added_by: string;
-    purchased_at: string;
   };
 };
 
@@ -47,54 +38,18 @@ export type DeleteItemMutation = {
   householdId: string;
 };
 
-export type EndTripMutation = {
-  type: 'end_trip';
+export type ClearCompletedMutation = {
+  type: 'clear_completed';
   householdId: string;
-  storeId: string;
+  listId: string;
   itemIds: string[];
-  historyItems: {
-    household_id: string;
-    name: string;
-    store_id: string;
-    aisle_id: string;
-    added_by: string;
-    purchased_at: string;
-  }[];
-};
-
-export type AddStapleMutation = {
-  type: 'add_staple';
-  householdId: string;
-  staple: {
-    household_id: string;
-    name: string;
-    default_store_id: string | null;
-    default_aisle_id: string | null;
-    default_qty: number | null;
-    default_unit: string | null;
-    sort_order: number;
-  };
-};
-
-export type DismissSuggestionMutation = {
-  type: 'dismiss_suggestion';
-  householdId: string;
-  dismissal: {
-    household_id: string;
-    item_name: string;
-    dismissed_at: string;
-    resurface_at: string;
-    dismissed_by: string;
-  };
 };
 
 export type OfflineMutation =
   | ToggleItemMutation
   | AddItemMutation
   | DeleteItemMutation
-  | EndTripMutation
-  | AddStapleMutation
-  | DismissSuggestionMutation;
+  | ClearCompletedMutation;
 
 async function getQueue(): Promise<OfflineMutation[]> {
   const raw = await storage.getItem(QUEUE_KEY);

@@ -1,7 +1,38 @@
 # Design & Status Reference
-**Last updated:** 2026-06-21
+**Last updated:** 2026-07-25
 
 This file is the running architecture snapshot and status tracker. Update it as features ship or decisions change. It is NOT the spec — the spec lives in `prd.md`, `tasks.md`, and `ux-flows.md`.
+
+---
+
+## 0. 2026-07-25 refactor — CartSync-style lists model (SUPERSEDES sections below)
+
+Major refactor: the store/aisle hierarchy and tab-bar UI described in the sections
+below were replaced with a simpler model based on the user's Replit "CartSync" app.
+
+- **Lists replace stores/aisles.** The `lists` table was ADOPTED from the Replit CartSync
+  app, which shared this Supabase project: migration `20260725000000` added
+  `household_id`/`sort_order`/`created_by` (backfilled from `owner_id`, now nullable
+  legacy) and swapped its RLS to the household pattern. `grocery_items` gains `list_id`
+  (NOT NULL) and optional free-text `tag`; `store_id`/`aisle_id` are now nullable legacy
+  columns. Migration `20260725000001` converted each Expo store → a list (aisle name →
+  tag), merged CartSync `items` into `grocery_items` (store_tag → tag, completed →
+  checked, note → notes), deduped, then dropped CartSync's `items`/`list_members` tables
+  and its broken `on_auth_user_created` signup trigger.
+- **Duplicate rule** now scoped `(list_id, LOWER(name)) WHERE checked = false`.
+- **Dropped from the app** (tables/Edge Function dormant in DB): staples, suggestions,
+  item_history writes, End Trip (replaced by "Clear all" on the completed section),
+  stores/aisles settings.
+- **Navigation:** no tab bar. `(app)/index` = My Lists cards → `(app)/list/[id]` detail
+  → `(app)/settings` behind avatar icon. Household invite flow retained.
+- **Theming:** iOS-system light/dark token palette in `constants/Colors.ts`, consumed
+  via `useThemeColors()` / `useThemedStyles()`; follows system preference (web uses
+  `prefers-color-scheme`).
+- **Retained:** auth + onboarding (restyled), offline queue (payload now list-scoped),
+  realtime sync, presence (re-keyed to `list_id`), barcode + voice input (prefill/parse
+  names only), swipe-to-delete via RNGH.
+
+Sections 1–8 below describe the PRE-refactor architecture and are kept for history.
 
 ---
 

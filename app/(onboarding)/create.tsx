@@ -1,12 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useAuthStyles } from '@/hooks/useAuthStyles';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { alert } from '@/lib/alert';
 import { supabase } from '@/lib/supabase';
 
 export default function CreateHousehold() {
+  const styles = useAuthStyles();
+  const colors = useThemeColors();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const { session } = useAuth();
@@ -72,7 +76,7 @@ export default function CreateHousehold() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.topContainer}>
       <Text style={styles.description}>
         Give your household a name (e.g., "The Smiths" or "Home").
       </Text>
@@ -80,6 +84,7 @@ export default function CreateHousehold() {
       <TextInput
         style={styles.input}
         placeholder="Household name"
+        placeholderTextColor={colors.mutedForeground}
         value={name}
         onChangeText={setName}
         autoCapitalize="words"
@@ -100,40 +105,3 @@ export default function CreateHousehold() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: '#fff',
-    paddingTop: 32,
-  },
-  description: {
-    fontSize: 15,
-    color: '#6b7280',
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    backgroundColor: '#f9fafb',
-  },
-  button: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-});

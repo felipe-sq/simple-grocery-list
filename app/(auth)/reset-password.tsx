@@ -1,12 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
+import { useAuthStyles } from '@/hooks/useAuthStyles';
+import { useThemeColors } from '@/hooks/useThemeColors';
 import { supabase } from '@/lib/supabase';
 
 type Stage = 'verifying' | 'form' | 'success' | 'error';
 
 export default function ResetPassword() {
+  const styles = useAuthStyles();
+  const colors = useThemeColors();
   const { token_hash, type } = useLocalSearchParams<{ token_hash?: string; type?: string }>();
   const router = useRouter();
 
@@ -59,7 +63,7 @@ export default function ResetPassword() {
   if (stage === 'verifying') {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.body}>Verifying reset link…</Text>
       </View>
     );
@@ -96,6 +100,7 @@ export default function ResetPassword() {
       <TextInput
         style={styles.input}
         placeholder="New password"
+        placeholderTextColor={colors.mutedForeground}
         value={password}
         onChangeText={(t) => { setPassword(t); setValidationError(null); }}
         secureTextEntry
@@ -107,6 +112,7 @@ export default function ResetPassword() {
       <TextInput
         style={styles.input}
         placeholder="Confirm new password"
+        placeholderTextColor={colors.mutedForeground}
         value={confirm}
         onChangeText={(t) => { setConfirm(t); setValidationError(null); }}
         secureTextEntry
@@ -130,43 +136,3 @@ export default function ResetPassword() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  body: {
-    fontSize: 15,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    backgroundColor: '#f9fafb',
-  },
-  button: {
-    backgroundColor: '#2563eb',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  errorText: { fontSize: 13, color: '#dc2626', marginBottom: 12 },
-});

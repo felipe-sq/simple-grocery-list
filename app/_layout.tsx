@@ -14,7 +14,7 @@ import { AlertHost } from '@/components/AlertHost';
 import { useAuth } from '@/hooks/useAuth';
 import { useHousehold } from '@/hooks/useHousehold';
 import { HouseholdProvider } from '@/lib/HouseholdProvider';
-import { StoresProvider } from '@/lib/StoresProvider';
+import { ListsProvider } from '@/lib/ListsProvider';
 import { PENDING_JOIN_TOKEN_KEY } from '@/app/(onboarding)/join';
 import { supabase } from '@/lib/supabase';
 
@@ -39,10 +39,10 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <HouseholdProvider>
-          <StoresProvider>
+          <ListsProvider>
             <RootLayoutNav fontsLoaded={fontsLoaded} />
             <AlertHost />
-          </StoresProvider>
+          </ListsProvider>
         </HouseholdProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
