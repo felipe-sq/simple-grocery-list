@@ -15,6 +15,7 @@ interface Props {
   item: GroceryItem;
   onToggle: () => void;
   onDelete: () => void;
+  onPress?: () => void;
   onTagPress?: () => void;
 }
 
@@ -25,7 +26,7 @@ function confirmDelete(name: string, onDelete: () => void) {
   ]);
 }
 
-function RowContent({ item, onToggle, onDelete, onTagPress, showDeleteButton }: Props & { showDeleteButton?: boolean }) {
+function RowContent({ item, onToggle, onDelete, onPress, onTagPress, showDeleteButton }: Props & { showDeleteButton?: boolean }) {
   const colors = useThemeColors();
   const tagColor = item.tag ? getTagColor(item.tag) : undefined;
 
@@ -69,7 +70,14 @@ function RowContent({ item, onToggle, onDelete, onTagPress, showDeleteButton }: 
         onPress={onToggle}
         accessibilityLabel={`${label}, ${item.checked ? 'checked' : 'unchecked'}`}
       />
-      <View style={styles.content}>
+      <TouchableOpacity
+        style={styles.content}
+        onPress={onPress}
+        disabled={onPress === undefined}
+        activeOpacity={0.6}
+        accessibilityRole={onPress ? 'button' : undefined}
+        accessibilityLabel={onPress ? `Edit ${item.name}` : undefined}
+      >
         <Text style={styles.name} numberOfLines={2}>
           {label}
         </Text>
@@ -78,7 +86,7 @@ function RowContent({ item, onToggle, onDelete, onTagPress, showDeleteButton }: 
             {item.notes}
           </Text>
         ) : null}
-      </View>
+      </TouchableOpacity>
       {item.pending_sync && <Text style={styles.pendingIcon}>⚠</Text>}
       {item.tag ? <TagPill tag={item.tag} color={tagColor} onPress={onTagPress} small /> : null}
       {showDeleteButton ? (
@@ -96,7 +104,7 @@ function RowContent({ item, onToggle, onDelete, onTagPress, showDeleteButton }: 
   );
 }
 
-export function ItemRow({ item, onToggle, onDelete, onTagPress }: Props) {
+export function ItemRow({ item, onToggle, onDelete, onPress, onTagPress }: Props) {
   const colors = useThemeColors();
   const styles = useThemedStyles((c) => ({
     deleteAction: {
@@ -108,7 +116,9 @@ export function ItemRow({ item, onToggle, onDelete, onTagPress }: Props) {
   }));
 
   if (Platform.OS === 'web') {
-    return <RowContent item={item} onToggle={onToggle} onDelete={onDelete} onTagPress={onTagPress} showDeleteButton />;
+    return (
+      <RowContent item={item} onToggle={onToggle} onDelete={onDelete} onPress={onPress} onTagPress={onTagPress} showDeleteButton />
+    );
   }
 
   const renderRightActions = (_prog: unknown, _drag: unknown, swipeable: SwipeableMethods) => (
@@ -133,7 +143,7 @@ export function ItemRow({ item, onToggle, onDelete, onTagPress }: Props) {
       friction={2}
       overshootRight={false}
     >
-      <RowContent item={item} onToggle={onToggle} onDelete={onDelete} onTagPress={onTagPress} />
+      <RowContent item={item} onToggle={onToggle} onDelete={onDelete} onPress={onPress} onTagPress={onTagPress} />
     </ReanimatedSwipeable>
   );
 }

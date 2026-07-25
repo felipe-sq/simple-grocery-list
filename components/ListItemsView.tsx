@@ -18,11 +18,12 @@ interface Props {
   selectedTag: string | null;
   onToggle: (item: GroceryItem) => void;
   onDelete: (item: GroceryItem) => void;
+  onEdit: (item: GroceryItem) => void;
   onTagPress: (tag: string) => void;
   onClearCompleted: () => void;
 }
 
-export function ListItemsView({ items, selectedTag, onToggle, onDelete, onTagPress, onClearCompleted }: Props) {
+export function ListItemsView({ items, selectedTag, onToggle, onDelete, onEdit, onTagPress, onClearCompleted }: Props) {
   const colors = useThemeColors();
   const [showCompleted, setShowCompleted] = useState(false);
 
@@ -139,6 +140,7 @@ export function ListItemsView({ items, selectedTag, onToggle, onDelete, onTagPre
         item={entry.item}
         onToggle={() => onToggle(entry.item)}
         onDelete={() => onDelete(entry.item)}
+        onPress={() => onEdit(entry.item)}
         onTagPress={entry.item.tag ? () => onTagPress(entry.item.tag as string) : undefined}
       />
     );

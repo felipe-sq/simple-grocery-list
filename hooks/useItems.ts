@@ -3,10 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutAnimation, Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
-import { enqueue, flush } from '@/lib/offlineQueue';
+import { enqueue, flushGroceryMutations } from '@/lib/offlineQueue';
 import type { AddItemInput, GroceryItem } from '@/types';
-
-const GROCERY_TYPES = ['toggle_item', 'add_item', 'delete_item', 'clear_completed'] as const;
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -41,58 +39,13 @@ export function useItems(
   useEffect(() => { householdIdRef.current = householdId; }, [householdId]);
 
   const flushQueue = useCallback(async () => {
-    await flush(async (mutation) => {
-      if (mutation.type === 'toggle_item') {
-        const { error } = await supabase
-          .from('grocery_items')
-          .update({
-            checked: mutation.checked,
-            checked_at: mutation.checked_at,
-            checked_by: mutation.checked_by,
-          })
-          .eq('id', mutation.itemId)
-          .eq('household_id', mutation.householdId);
-        if (!error) {
-          setPendingIds((prev) => {
-            const next = new Set(prev);
-            next.delete(mutation.itemId);
-            return next;
-          });
-          return true;
-        }
-        return false;
-      }
-      if (mutation.type === 'add_item') {
-        const { error } = await supabase
-          .from('grocery_items')
-          .insert(mutation.groceryItem);
-        if (error) return false;
-        setPendingIds((prev) => {
-          const next = new Set(prev);
-          next.delete(mutation.itemId);
-          return next;
-        });
-        return true;
-      }
-      if (mutation.type === 'delete_item') {
-        // Silently discard conflicts (item deleted by another member)
-        await supabase
-          .from('grocery_items')
-          .delete()
-          .eq('id', mutation.itemId)
-          .eq('household_id', mutation.householdId);
-        return true;
-      }
-      if (mutation.type === 'clear_completed') {
-        const { error } = await supabase
-          .from('grocery_items')
-          .delete()
-          .in('id', mutation.itemIds)
-          .eq('household_id', mutation.householdId);
-        return !error;
-      }
-      return false;
-    }, GROCERY_TYPES);
+    await flushGroceryMutations((flushedId) => {
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(flushedId);
+        return next;
+      });
+    });
   }, []);
 
   useEffect(() => {

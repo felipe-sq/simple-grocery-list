@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AddItemBar } from '@/components/AddItemBar';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
+import { EditItemSheet, type EditItemInput } from '@/components/EditItemSheet';
 import { FilterBar } from '@/components/FilterBar';
 import { ListeningOverlay } from '@/components/ListeningOverlay';
 import { ListItemsView } from '@/components/ListItemsView';
@@ -30,7 +31,7 @@ export default function ListDetailScreen() {
   const { householdId } = useHousehold();
   const { lists } = useLists();
   const list = lists.find((l) => l.id === id) ?? null;
-  const { items, loading, toggleItem, addItem, deleteItem, clearCompleted } = useItems(id, householdId);
+  const { items, loading, toggleItem, addItem, editItem, deleteItem, clearCompleted } = useItems(id, householdId);
 
   const { presenceByList, setActiveListId } = usePresenceContext();
   const othersHere = presenceByList.get(id) ?? [];
@@ -48,6 +49,7 @@ export default function ListDetailScreen() {
   const [voiceItems, setVoiceItems] = useState<ParsedVoiceItem[]>([]);
   const [voiceReviewVisible, setVoiceReviewVisible] = useState(false);
   const [prefillName, setPrefillName] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<GroceryItem | null>(null);
 
   const { lookupBarcode } = useBarcodeScanner();
 
@@ -89,6 +91,16 @@ export default function ListDetailScreen() {
 
   const handleToggle = (item: GroceryItem) => void toggleItem(item.id);
   const handleDelete = (item: GroceryItem) => void deleteItem(item.id);
+
+  async function handleSaveEdit(itemId: string, data: EditItemInput): Promise<string | null> {
+    // Duplicate rule: renaming must not collide with another unchecked item.
+    const duplicate = items.some(
+      (i) => i.id !== itemId && !i.checked && i.name.trim().toLowerCase() === data.name.toLowerCase(),
+    );
+    if (duplicate) return `"${data.name}" is already on this list`;
+    const { error } = await editItem(itemId, data);
+    return error;
+  }
 
   function handleClearCompleted() {
     alert(
@@ -167,6 +179,7 @@ export default function ListDetailScreen() {
           selectedTag={selectedTag}
           onToggle={handleToggle}
           onDelete={handleDelete}
+          onEdit={setEditTarget}
           onTagPress={(tag) => setSelectedTag(selectedTag === tag ? null : tag)}
           onClearCompleted={handleClearCompleted}
         />
@@ -181,6 +194,13 @@ export default function ListDetailScreen() {
         }}
         onScanBarcode={() => setScannerVisible(true)}
         onVoice={Platform.OS === 'android' ? undefined : () => setListening(true)}
+      />
+
+      <EditItemSheet
+        item={editTarget}
+        tags={tags}
+        onClose={() => setEditTarget(null)}
+        onSave={handleSaveEdit}
       />
 
       <ShareSheet visible={shareVisible} onClose={() => setShareVisible(false)} />
