@@ -1,18 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import { useHousehold } from '@/hooks/useHousehold';
 import type { PresencePayload } from '@/types';
 
-// Returns a map of listId -> display names of OTHER household members present there.
-export function usePresence(
-  householdId: string | null,
-  userId: string | null,
-  userName: string,
-  activeListId: string | null,
-): Map<string, string[]> {
+interface PresenceContextValue {
+  // listId -> display names of OTHER household members currently on that list.
+  presenceByList: Map<string, string[]>;
+  // The list detail screen reports which list this client is viewing.
+  setActiveListId: (listId: string | null) => void;
+}
+
+const PresenceContext = createContext<PresenceContextValue>({
+  presenceByList: new Map(),
+  setActiveListId: () => {},
+});
+
+// Exactly ONE realtime presence channel per app instance. Screens must never
+// subscribe to the household presence topic themselves: `supabase.channel()`
+// returns the existing instance for a repeated topic, and adding callbacks to
+// an already-subscribed channel throws ("cannot add `presence` callbacks
+// after `subscribe()`").
+export function PresenceProvider({ children }: { children: ReactNode }) {
+  const { session } = useAuth();
+  const { householdId } = useHousehold();
+  const userId = session?.user.id ?? null;
+  const userName = session?.user.email?.split('@')[0] ?? 'User';
+
   const [presenceByList, setPresenceByList] = useState<Map<string, string[]>>(new Map());
+  const [activeListId, setActiveListIdState] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   // Keep a ref so AppState and subscribe callbacks always read the latest values
   // without being captured as stale closure variables.
@@ -79,5 +98,19 @@ export function usePresence(
     void channel.track({ user_id: userId, user_name: userName, list_id: activeListId });
   }, [activeListId, userId, userName]);
 
-  return presenceByList;
+  const setActiveListId = useCallback((listId: string | null) => {
+    // Deferred: callers invoke this from screen mount effects, and the
+    // project convention forbids synchronous setState inside effect bodies.
+    queueMicrotask(() => setActiveListIdState(listId));
+  }, []);
+
+  return (
+    <PresenceContext.Provider value={{ presenceByList, setActiveListId }}>
+      {children}
+    </PresenceContext.Provider>
+  );
+}
+
+export function usePresenceContext(): PresenceContextValue {
+  return useContext(PresenceContext);
 }

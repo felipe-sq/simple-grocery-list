@@ -6,12 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ListCard } from '@/components/ListCard';
 import { ListFormModal } from '@/components/ListFormModal';
-import { useAuth } from '@/hooks/useAuth';
 import { useHousehold } from '@/hooks/useHousehold';
 import { useListCounts } from '@/hooks/useListCounts';
 import { useLists } from '@/hooks/useLists';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { usePresence } from '@/hooks/usePresence';
+import { usePresenceContext } from '@/lib/PresenceProvider';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { alert } from '@/lib/alert';
@@ -21,13 +20,11 @@ export default function MyListsScreen() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { session } = useAuth();
   const { householdId } = useHousehold();
   const { lists, loading, createList, updateList, deleteList } = useLists();
   const counts = useListCounts(householdId);
   const { isOnline } = useNetworkStatus();
-  const userName = session?.user.email?.split('@')[0] ?? 'User';
-  const presence = usePresence(householdId, session?.user.id ?? null, userName, null);
+  const { presenceByList } = usePresenceContext();
 
   const [showNew, setShowNew] = useState(false);
   const [editTarget, setEditTarget] = useState<List | null>(null);
@@ -146,7 +143,7 @@ export default function MyListsScreen() {
                 list={item}
                 totalCount={count.total}
                 remainingCount={count.remaining}
-                presentNames={presence.get(item.id)}
+                presentNames={presenceByList.get(item.id)}
                 onPress={() => router.push(`/(app)/list/${item.id}`)}
                 onLongPress={() => handleLongPress(item)}
               />

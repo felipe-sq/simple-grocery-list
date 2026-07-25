@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,12 +11,11 @@ import { ListeningOverlay } from '@/components/ListeningOverlay';
 import { ListItemsView } from '@/components/ListItemsView';
 import { ShareSheet } from '@/components/ShareSheet';
 import { VoiceReviewSheet } from '@/components/VoiceReviewSheet';
-import { useAuth } from '@/hooks/useAuth';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { useHousehold } from '@/hooks/useHousehold';
 import { useItems } from '@/hooks/useItems';
 import { useLists } from '@/hooks/useLists';
-import { usePresence } from '@/hooks/usePresence';
+import { usePresenceContext } from '@/lib/PresenceProvider';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
 import { alert } from '@/lib/alert';
@@ -28,15 +27,19 @@ export default function ListDetailScreen() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { session } = useAuth();
   const { householdId } = useHousehold();
   const { lists } = useLists();
   const list = lists.find((l) => l.id === id) ?? null;
   const { items, loading, toggleItem, addItem, deleteItem, clearCompleted } = useItems(id, householdId);
 
-  const userName = session?.user.email?.split('@')[0] ?? 'User';
-  const presence = usePresence(householdId, session?.user.id ?? null, userName, id);
-  const othersHere = presence.get(id) ?? [];
+  const { presenceByList, setActiveListId } = usePresenceContext();
+  const othersHere = presenceByList.get(id) ?? [];
+
+  // Report which list this client is viewing (shown as presence to others).
+  useEffect(() => {
+    setActiveListId(id);
+    return () => setActiveListId(null);
+  }, [id, setActiveListId]);
 
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [shareVisible, setShareVisible] = useState(false);
