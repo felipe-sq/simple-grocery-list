@@ -47,7 +47,7 @@ Sections 1–8 below describe the PRE-refactor architecture and are kept for his
 | Backend | Supabase (Postgres + Realtime + Auth + RLS) |
 | Web hosting | Vercel (GitHub integration, auto-deploy on push to `main`) |
 | iOS builds | Expo EAS (configured, not yet run on physical device) |
-| Bottom sheets | `@gorhom/bottom-sheet` |
+| Bottom sheets | RN `Modal` via `components/SheetModal.tsx` (`@gorhom/bottom-sheet` removed 2026-07-25 — its native present() silently no-ops under this Reanimated/new-arch combo) |
 | Drag-to-reorder | `react-native-draggable-flatlist` |
 | Animations | `react-native-reanimated` |
 | Offline storage | `react-native-mmkv` (native) / `idb` (web) |

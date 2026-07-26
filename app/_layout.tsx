@@ -1,6 +1,5 @@
 import 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -37,14 +36,12 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <HouseholdProvider>
-          <ListsProvider>
-            <RootLayoutNav fontsLoaded={fontsLoaded} />
-            <AlertHost />
-          </ListsProvider>
-        </HouseholdProvider>
-      </BottomSheetModalProvider>
+      <HouseholdProvider>
+        <ListsProvider>
+          <RootLayoutNav fontsLoaded={fontsLoaded} />
+          <AlertHost />
+        </ListsProvider>
+      </HouseholdProvider>
     </GestureHandlerRootView>
   );
 }

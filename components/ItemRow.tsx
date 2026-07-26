@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import ReanimatedSwipeable, {
   type SwipeableMethods,
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -70,11 +70,12 @@ function RowContent({ item, onToggle, onDelete, onPress, onTagPress, showDeleteB
         onPress={onToggle}
         accessibilityLabel={`${label}, ${item.checked ? 'checked' : 'unchecked'}`}
       />
-      <TouchableOpacity
+      {/* RN Pressable, not TouchableOpacity: inside RNGH's ReanimatedSwipeable
+          TouchableOpacity taps are swallowed (see design.md §8), Pressable's are not. */}
+      <Pressable
         style={styles.content}
         onPress={onPress}
         disabled={onPress === undefined}
-        activeOpacity={0.6}
         accessibilityRole={onPress ? 'button' : undefined}
         accessibilityLabel={onPress ? `Edit ${item.name}` : undefined}
       >
@@ -86,7 +87,7 @@ function RowContent({ item, onToggle, onDelete, onPress, onTagPress, showDeleteB
             {item.notes}
           </Text>
         ) : null}
-      </TouchableOpacity>
+      </Pressable>
       {item.pending_sync && <Text style={styles.pendingIcon}>⚠</Text>}
       {item.tag ? <TagPill tag={item.tag} color={tagColor} onPress={onTagPress} small /> : null}
       {showDeleteButton ? (

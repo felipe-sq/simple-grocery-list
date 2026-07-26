@@ -159,5 +159,4 @@ Before marking a ticket done, verify:
 - expo-camera barcode: https://docs.expo.dev/versions/latest/sdk/camera/
 - expo-speech-recognition: https://docs.expo.dev/versions/latest/sdk/speech/
 - react-native-draggable-flatlist: https://github.com/computerjazz/react-native-draggable-flatlist
-- @gorhom/bottom-sheet: https://gorhom.dev/react-native-bottom-sheet/
 - Claude Code docs: https://docs.claude.com/en/docs/claude-code/overview

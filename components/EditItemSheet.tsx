@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { SheetModal } from '@/components/SheetModal';
+import { SheetModal, SheetScrollView } from '@/components/SheetModal';
 import { getTagColor } from '@/components/TagPill';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useThemedStyles } from '@/hooks/useThemedStyles';
@@ -23,25 +23,37 @@ interface Props {
   onSave: (itemId: string, data: EditItemInput) => Promise<string | null>;
 }
 
+// NOTE: content must render unconditionally inside SheetModal — the native
+// bottom sheet sizes itself from its children, and conditional (false)
+// children present an invisible zero-height sheet.
 export function EditItemSheet({ item, tags, onClose, onSave }: Props) {
-  return (
-    <SheetModal visible={item !== null} onClose={onClose} snapPoint="75%">
-      {/* Conditional render = fresh form state per opened item */}
-      {item !== null && <SheetBody item={item} tags={tags} onClose={onClose} onSave={onSave} />}
-    </SheetModal>
-  );
-}
-
-function SheetBody({ item, tags, onClose, onSave }: Props & { item: GroceryItem }) {
   const colors = useThemeColors();
-  const [name, setName] = useState(item.name);
-  const [tag, setTag] = useState<string | null>(item.tag);
+  const [name, setName] = useState('');
+  const [tag, setTag] = useState<string | null>(null);
   const [newTag, setNewTag] = useState('');
-  const [qty, setQty] = useState(item.quantity !== null ? String(item.quantity) : '');
-  const [unit, setUnit] = useState(item.unit ?? '');
-  const [notes, setNotes] = useState(item.notes ?? '');
+  const [qty, setQty] = useState('');
+  const [unit, setUnit] = useState('');
+  const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load the tapped item's fields whenever the sheet opens for a new item.
+  useEffect(() => {
+    if (!item) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      setName(item.name);
+      setTag(item.tag);
+      setNewTag('');
+      setQty(item.quantity !== null ? String(item.quantity) : '');
+      setUnit(item.unit ?? '');
+      setNotes(item.notes ?? '');
+      setSaving(false);
+      setError(null);
+    });
+    return () => { active = false; };
+  }, [item]);
 
   const styles = useThemedStyles((c) => ({
     header: {
@@ -54,7 +66,7 @@ function SheetBody({ item, tags, onClose, onSave }: Props & { item: GroceryItem 
     },
     title: { flex: 1, fontSize: 18, fontWeight: '700' as const, color: c.foreground },
     closeIcon: { fontSize: 18, color: c.mutedForeground },
-    body: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 20, gap: 14 },
+    body: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 24, gap: 14 },
     label: { fontSize: 13, fontWeight: '600' as const, letterSpacing: 0.4, color: c.mutedForeground, marginBottom: 6 },
     input: {
       borderWidth: 1,
@@ -90,10 +102,10 @@ function SheetBody({ item, tags, onClose, onSave }: Props & { item: GroceryItem 
     saveBtnText: { color: c.primaryForeground, fontSize: 15, fontWeight: '600' as const },
   }));
 
-  const canSave = name.trim().length > 0 && !saving;
+  const canSave = name.trim().length > 0 && !saving && item !== null;
 
   async function handleSave() {
-    if (!canSave) return;
+    if (!canSave || !item) return;
     setSaving(true);
     setError(null);
     const parsedQty = qty.trim() ? parseFloat(qty) : null;
@@ -120,7 +132,7 @@ function SheetBody({ item, tags, onClose, onSave }: Props & { item: GroceryItem 
   }
 
   return (
-    <>
+    <SheetModal visible={item !== null} onClose={onClose} snapPoint="75%">
       <View style={styles.header}>
         <Text style={styles.title}>Edit Item</Text>
         <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close">
@@ -128,7 +140,7 @@ function SheetBody({ item, tags, onClose, onSave }: Props & { item: GroceryItem 
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+      <SheetScrollView contentContainerStyle={styles.body}>
         {error !== null && <Text style={styles.errorText}>{error}</Text>}
 
         <View>
@@ -217,8 +229,8 @@ function SheetBody({ item, tags, onClose, onSave }: Props & { item: GroceryItem 
         >
           <Text style={styles.saveBtnText}>{saving ? 'Saving…' : 'Save'}</Text>
         </Pressable>
-      </ScrollView>
-    </>
+      </SheetScrollView>
+    </SheetModal>
   );
 }
 

@@ -1,21 +1,17 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useCallback, useLayoutEffect } from 'react';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
-import {
-  BottomSheetBackdrop,
-  BottomSheetModal,
-  BottomSheetScrollView,
-  type BottomSheetBackdropProps,
-} from '@gorhom/bottom-sheet';
+
+import { useThemedStyles } from '@/hooks/useThemedStyles';
 
 type SheetModalProps = {
   visible: boolean;
   onClose: () => void;
-  /** Percentage height for native snap point and web sheet height. Default '85%'. */
+  /** Percentage height of the sheet. Default '85%'. */
   snapPoint?: `${number}%`;
   /** Set false for sheets with no text inputs to skip keyboard avoidance. Default true. */
   hasKeyboardInput?: boolean;
-  /** Native backdrop press behavior. Default 'none' (only X button closes). */
+  /** Backdrop press behavior. Default 'close' (matches pre-refactor web behavior). */
   backdropPressBehavior?: 'none' | 'close';
   children: React.ReactNode;
 };
@@ -26,36 +22,24 @@ type SheetScrollViewProps = {
   children: React.ReactNode;
 };
 
-/**
- * Drop-in scroll container for use inside SheetModal.
- * Renders BottomSheetScrollView on native, ScrollView on web.
- */
+/** Drop-in scroll container for use inside SheetModal. */
 export function SheetScrollView({ style, contentContainerStyle, children }: SheetScrollViewProps) {
-  if (Platform.OS === 'web') {
-    return (
-      <ScrollView
-        style={[styles.scrollFlex, style]}
-        contentContainerStyle={contentContainerStyle}
-        keyboardShouldPersistTaps="handled"
-      >
-        {children}
-      </ScrollView>
-    );
-  }
   return (
-    <BottomSheetScrollView
+    <ScrollView
       style={[styles.scrollFlex, style]}
       contentContainerStyle={contentContainerStyle}
       keyboardShouldPersistTaps="handled"
     >
       {children}
-    </BottomSheetScrollView>
+    </ScrollView>
   );
 }
 
 /**
- * Cross-platform slide-up sheet container.
- * Uses BottomSheetModal on native, React Native Modal on web.
+ * Cross-platform slide-up sheet container built on RN Modal.
+ * (Previously used @gorhom/bottom-sheet on native; its BottomSheetModal
+ * silently fails to present under this app's Reanimated/new-architecture
+ * combination — present() runs, nothing renders. RN Modal works everywhere.)
  * Children are responsible for their own header / scroll / footer layout.
  */
 export function SheetModal({
@@ -63,12 +47,9 @@ export function SheetModal({
   onClose,
   snapPoint = '85%',
   hasKeyboardInput = true,
-  backdropPressBehavior = 'none',
+  backdropPressBehavior = 'close',
   children,
 }: SheetModalProps) {
-  const modalRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => [snapPoint], [snapPoint]);
-
   // On web, blur any focused element before the Modal hides itself with aria-hidden.
   // useLayoutEffect fires synchronously after DOM commits, before paint — early enough
   // to move focus away before the browser logs the aria-hidden/focus conflict warning.
@@ -87,57 +68,34 @@ export function SheetModal({
     onClose();
   }, [onClose]);
 
-  useEffect(() => {
-    if (Platform.OS === 'web') return;
-    if (visible) {
-      modalRef.current?.present();
-    } else {
-      modalRef.current?.dismiss();
-    }
-  }, [visible]);
+  const themed = useThemedStyles((c) => ({
+    sheet: {
+      backgroundColor: c.card,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      overflow: 'hidden' as const,
+      height: snapPoint,
+    },
+  }));
 
-  const renderBackdrop = useCallback(
-    (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        pressBehavior={backdropPressBehavior}
-      />
-    ),
-    [backdropPressBehavior],
-  );
-
-  if (Platform.OS === 'web') {
-    return (
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-        <View style={styles.overlay}>
-          <Pressable
-            style={styles.backdrop}
-            onPress={handleClose}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-          />
-          <View style={[styles.sheet, { height: snapPoint }]}>
-            {children}
-          </View>
-        </View>
-      </Modal>
-    );
-  }
+  const sheet = <View style={themed.sheet}>{children}</View>;
 
   return (
-    <BottomSheetModal
-      ref={modalRef}
-      snapPoints={snapPoints}
-      enablePanDownToClose={false}
-      backdropComponent={renderBackdrop}
-      keyboardBehavior={hasKeyboardInput ? 'interactive' : undefined}
-      keyboardBlurBehavior={hasKeyboardInput ? 'restore' : undefined}
-      onDismiss={handleClose}
-    >
-      {children}
-    </BottomSheetModal>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+      <View style={styles.overlay}>
+        <Pressable
+          style={styles.backdrop}
+          onPress={backdropPressBehavior === 'close' ? handleClose : undefined}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        />
+        {hasKeyboardInput && Platform.OS === 'ios' ? (
+          <KeyboardAvoidingView behavior="padding">{sheet}</KeyboardAvoidingView>
+        ) : (
+          sheet
+        )}
+      </View>
+    </Modal>
   );
 }
 
@@ -149,12 +107,6 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-  },
-  sheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    overflow: 'hidden',
   },
   scrollFlex: { flex: 1 },
 });
