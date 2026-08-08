@@ -105,7 +105,7 @@ types/index.ts
 Barcode scanning needs a camera and a secure context. `isCameraAvailable()` gates the
 Scan button; where it returns false the button is **not rendered**. A button that throws
 is worse than no button. The zxing fallback (Safari, Firefox) is dynamically imported so
-its ~200 KB decoder never loads on first paint — keep it that way.
+its decoder (468 kB raw, 121 kB gzipped) never loads on first paint — keep it that way.
 
 ---
 

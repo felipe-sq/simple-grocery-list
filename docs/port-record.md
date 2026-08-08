@@ -238,8 +238,8 @@ meaning in a web-only app.
 `expo-camera` is gone. `getUserMedia` provides the stream, then:
 
 1. Native `BarcodeDetector` where available (Chrome, Edge, Android) — zero bundle cost.
-2. `@zxing/browser` fallback for Safari and Firefox, **dynamically imported** so its ~200 KB
-   decoder only loads when someone actually taps Scan.
+2. `@zxing/browser` fallback for Safari and Firefox, **dynamically imported** so its decoder —
+   468 kB raw, 121 kB gzipped, measured, not estimated — only loads when someone taps Scan.
 3. No `getUserMedia`, or a denied permission → the Scan button is not rendered. Degrade by
    hiding; a button that throws is worse than no button.
 
@@ -257,7 +257,52 @@ development works.
 - `metadata` with a real title, description, and OG image — this URL gets shared.
 - Confirm the bundle actually got smaller. The whole point of leaving react-native-web was load
   time: `lucide-react` must tree-shake, `motion` must stay out of the initial chunk, and zxing
-  must stay in a lazy one.
+  must stay in a lazy one. **Measured below — this bullet went unverified for a while, and the
+  numbers it was asserting turned out to be roughly right and specifically wrong.**
+
+### The bundle, measured
+
+Method: build both versions, serve them, and count only what the served HTML tells the browser
+to fetch on first paint. Library attribution comes from source maps rather than grepping the
+minified output — an earlier attempt at this keyed on internal identifiers like
+`MotionConfigContext`, which minification renames, and so "found" that `motion` and
+`lucide-react` were in zero chunks. They were in the bundle the whole time. Any conclusion here
+that could have come from a `grep` should be treated as suspect.
+
+Baseline is `archive/expo-supabase`, exported with `npx expo export -p web` (placeholder
+Supabase env values; they affect runtime, not bundle size).
+
+| First-load JS, gzipped | Expo / react-native-web | Next | Change |
+| --- | --- | --- | --- |
+| `/sign-in` | 731 kB | 199 kB | **−73%** |
+| `/lists` | 731 kB | 213 kB | **−71%** |
+| `/lists/[id]` | 731 kB | 257 kB | **−65%** |
+| `/settings` | 731 kB | 215 kB | **−71%** |
+
+The Expo column is one number because the export produced exactly one 2,955 kB entry bundle
+with no route splitting: every visitor downloaded the barcode scanner, the settings screen, and
+the onboarding flow in order to see a sign-in form. Most of the win is splitting, not Next.
+
+**The honest caveat:** this is not a like-for-like framework comparison. The Expo bundle also
+contained `@supabase/supabase-js`, realtime subscriptions, the offline queue, and the household
+model — all of which the demo deleted rather than ported. Some unknown share of the 73% is
+scope, not tooling. The comparison is still the right one for the question actually asked
+(is the thing users download smaller?), but it does not support "Next is 73% leaner than
+react-native-web".
+
+The three specific claims:
+
+1. **`lucide-react` tree-shakes — yes.** 21 icon modules reach the build (`check`,
+   `chevron-left`, `circle-check`, `ellipsis`, …), out of the ~1,500 the package ships.
+2. **`motion` stays out of the initial chunk — on three routes of four.** It is confined to a
+   single chunk (132 kB raw / 43.5 kB gz, shared with `lucide-react`, so motion's own share is
+   smaller) and is absent from the first-load payload of `/sign-in`, `/lists`, and `/settings`.
+   It *is* in the first load of `/lists/[id]`, which is correct rather than a regression: that
+   route's row drag and animated reorder are visible immediately, so deferring it would only
+   buy a flash of unanimated list. Worth restating precisely, because "out of the initial
+   chunk" reads as an absolute and is not one.
+3. **zxing stays lazy — yes.** `@zxing/library` sits in exactly one chunk that no route's
+   first-load payload references. It is fetched on tap, as designed.
 - Sanity-check in Chrome, Safari, and Firefox, at phone and laptop widths, keyboard-only.
 
 **The OG image shipped separately, after the fact.** The rest of this phase landed with the
