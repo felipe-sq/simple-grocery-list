@@ -8,7 +8,8 @@ import type { List, ListItem } from '@/types';
  * invisible.
  */
 
-const SEED_LIST_ID = 'seed-list-weekly-shop';
+// Appears in the URL as /lists/<id>, so it tracks the list's display name.
+const SEED_LIST_ID = 'seed-list-weekly-groceries';
 
 // Fixed timestamp rather than Date.now(): a stable createdAt keeps ordering
 // deterministic and avoids any hydration mismatch between server and client.
