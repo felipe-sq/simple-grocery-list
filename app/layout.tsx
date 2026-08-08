@@ -9,10 +9,19 @@ import './globals.css';
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
+// "backend-free", not "offline-friendly": there is no service worker and no
+// manifest, so the app does not load without a network. Client-side is not offline.
 const SITE_DESCRIPTION =
-  'A fast, offline-friendly grocery list app. Demo build — your lists live in this browser tab only.';
+  'A fast, backend-free grocery list app. Demo build — your lists live in this browser tab only.';
+
+// og:image must be an absolute URL or crawlers drop it, and the file-convention
+// images below are declared as relative paths. metadataBase is what makes them
+// absolute, so it has to be the canonical host this demo is actually shared from
+// — hardcoded, because a demo with no backend has no environment to read it from.
+const SITE_URL = 'https://simple-grocery-list-demo.vercel.app';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Simple Grocery List',
     template: '%s · Simple Grocery List',
