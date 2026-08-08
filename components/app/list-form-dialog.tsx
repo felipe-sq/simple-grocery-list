@@ -37,7 +37,7 @@ export function ListFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
-        {/* Mounted only while open and keyed by target, so the fields initialise
+        {/* Mounted only while open and keyed by target, so the fields initialize
             from props on every open instead of being reset by an effect. */}
         {open ? (
           <ListForm
@@ -77,7 +77,7 @@ function ListForm({
       <DialogHeader>
         <DialogTitle>{editing ? 'Edit list' : 'New list'}</DialogTitle>
         <DialogDescription>
-          {editing ? 'Rename this list or change its colour.' : 'Give your list a name.'}
+          {editing ? 'Rename this list or change its color.' : 'Give your list a name.'}
         </DialogDescription>
       </DialogHeader>
 
@@ -95,13 +95,13 @@ function ListForm({
         </div>
 
         <fieldset className="grid gap-2">
-          <legend className="text-sm leading-none font-medium">Colour</legend>
+          <legend className="text-sm leading-none font-medium">Color</legend>
           <div className="flex flex-wrap gap-2 pt-1">
             {COLORS.map((option) => (
               <button
                 key={option}
                 type="button"
-                aria-label={`Colour ${option}`}
+                aria-label={`Color ${option}`}
                 aria-pressed={color === option}
                 onClick={() => setColor(option)}
                 className={cn(

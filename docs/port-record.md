@@ -20,7 +20,7 @@ https://www.felipesq.dev. No backend, no accounts, no invite loops.
 | Framework | Next.js App Router + React + Tailwind + TypeScript strict. Full port off Expo/react-native-web. |
 | Backend | **None.** Supabase removed entirely — client, migrations, Edge Function, config. |
 | Persistence | `sessionStorage`. Survives refresh and in-app navigation; dies when the tab closes. |
-| Auth | Demo sign-in **validated locally**. Real screens, no real account, explicitly labelled. |
+| Auth | Demo sign-in **validated locally**. Real screens, no real account, explicitly labeled. |
 | Sharing | None. Single-user, private. Households, members, invites, presence all deleted. |
 | Platforms | Web only. `ios/`, EAS, and every native-only dependency removed. |
 | Features | Tags + filter, swipe-to-delete, edit sheet, barcode scanning. **Voice input dropped.** |
@@ -39,7 +39,7 @@ the existing `grocery-list-app` repo.
 ### A consequence worth stating up front
 
 `sessionStorage` is **per tab**. Two tabs are two fully independent instances of the app. That
-is exactly the stand-alone-instance behaviour this demo needed, and I got it for free — no
+is exactly the stand-alone-instance behavior this demo needed, and I got it for free — no
 tenancy model, no row-level security, no `household_id` on anything.
 
 ---
@@ -185,8 +185,8 @@ The three screens are kept as a UI showcase, and are straightforward about what 
   goes into the session store. **The password is never stored**, hashed or otherwise — there is
   nothing to authenticate against, so storing one would be pure liability.
 - Every auth screen carries a persistent line: *"Demo — no account is created and nothing is
-  sent to a server."* An unlabelled fake login on a public site reads as either broken or
-  deceptive; labelled, it reads as a deliberate UI demonstration.
+  sent to a server."* An unlabeled fake login on a public site reads as either broken or
+  deceptive; labeled, it reads as a deliberate UI demonstration.
 - `sign-up` and `reset-password` show their success states without sending anything.
 - The route guard is a small client check in `(app)/layout.tsx`: no session → redirect to
   `/sign-in`. It waits for hydration before deciding. This replaced the three-way
@@ -200,7 +200,7 @@ The three screens are kept as a UI showcase, and are straightforward about what 
 ## 8. Phase 5–6 — Lists and items UI
 
 Structure and props carried over from the existing components; the markup was rewritten as DOM
-with Tailwind. Behaviour preserved as-is: optimistic check-off with animated reordering, the
+with Tailwind. Behavior preserved as-is: optimistic check-off with animated reordering, the
 completed section with "Clear all", tag chips as filters, context actions for rename and
 delete, and confirm dialogs before anything destructive.
 

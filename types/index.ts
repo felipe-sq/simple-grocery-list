@@ -9,7 +9,7 @@ export type ItemSource = 'manual' | 'barcode';
 export type List = {
   id: string;
   name: string;
-  /** Hex colour, or null to fall back to the primary accent. */
+  /** Hex color, or null to fall back to the primary accent. */
   color: string | null;
   sortOrder: number;
   createdAt: string;

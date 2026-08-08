@@ -31,7 +31,7 @@ export function EditItemDialog({ item, onOpenChange, onSave, onDelete }: EditIte
   return (
     <Dialog open={item !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
-        {/* Keyed and mounted per item, so the fields initialise from props and
+        {/* Keyed and mounted per item, so the fields initialize from props and
             never need an effect to reset between edits. */}
         {item ? (
           <EditItemForm

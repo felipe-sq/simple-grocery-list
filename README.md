@@ -29,7 +29,7 @@ is the entire setup.
 
 ## Features
 
-- **Multiple lists**, each with a colour, and live item counts
+- **Multiple lists**, each with a color, and live item counts
 - **Tags and filtering** — group items by aisle and filter with one tap
 - **Quantity, unit, and notes** per item
 - **Barcode scanning** — the camera reads a product barcode and

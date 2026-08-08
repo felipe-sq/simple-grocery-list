@@ -29,7 +29,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: BarcodeScanne
 
     let stream: MediaStream | null = null;
     let stopScan: StopScan | null = null;
-    let cancelled = false;
+    let canceled = false;
 
     async function begin() {
       setStatus('starting');
@@ -37,23 +37,23 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: BarcodeScanne
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' },
         });
-        if (cancelled) return;
+        if (canceled) return;
 
         const video = videoRef.current;
         if (!video) return;
         video.srcObject = stream;
         await video.play();
-        if (cancelled) return;
+        if (canceled) return;
 
         setStatus('scanning');
         stopScan = await startScanning(video, stream, (value) => {
-          if (cancelled) return;
-          cancelled = true;
+          if (canceled) return;
+          canceled = true;
           onDetected(value);
           onOpenChange(false);
         });
       } catch (error) {
-        if (cancelled) return;
+        if (canceled) return;
         const denied = error instanceof DOMException && error.name === 'NotAllowedError';
         setStatus(denied ? 'denied' : 'failed');
       }
@@ -62,7 +62,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: BarcodeScanne
     void begin();
 
     return () => {
-      cancelled = true;
+      canceled = true;
       stopScan?.();
       stream?.getTracks().forEach((track) => track.stop());
     };

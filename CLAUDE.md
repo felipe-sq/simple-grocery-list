@@ -1,6 +1,6 @@
 # CLAUDE.md — Simple Grocery List
 
-Read at the start of every session. These instructions override default behaviour.
+Read at the start of every session. These instructions override default behavior.
 
 ---
 
@@ -56,7 +56,7 @@ against, so storing one would be pure liability.
 
 Every auth screen renders `<DemoAuthNotice />`. Do not remove it, and do not add copy
 that implies real security ("encrypted", "your data is safe", "securely stored"). An
-unlabelled fake login on a public site reads as either broken or deceptive.
+unlabeled fake login on a public site reads as either broken or deceptive.
 
 ---
 
@@ -96,7 +96,7 @@ types/index.ts
   disabled anywhere. Reset form state by keying and remounting the form, not by an
   effect; read external values with `useSyncExternalStore`.
 - Tailwind classes only — no inline `style` except for user-chosen values such as a
-  list's colour.
+  list's color.
 
 ---
 
