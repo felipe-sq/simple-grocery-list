@@ -40,7 +40,7 @@ achieved for free — no tenancy model, no row-level security, no `household_id`
 
 This repo is a byte-copy of `grocery-list-app` and still points at **live** infrastructure:
 
-- `.env.local` → Supabase project `REDACTED-PROJECT-REF` (the household app's production DB)
+- `.env.local` → the household app's production Supabase project (ref redacted)
 - `.vercel/project.json` → Vercel project `grocery-list-app`
 - `git remote origin` → `git@github.com:felipe-sq/grocery-list-app.git`
 
