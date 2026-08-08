@@ -260,6 +260,17 @@ development works.
   must stay in a lazy one.
 - Sanity-check in Chrome, Safari, and Firefox, at phone and laptop widths, keyboard-only.
 
+**The OG image shipped separately, after the fact.** The rest of this phase landed with the
+port; the image did not, and the gap was not caught at the time because the metadata *looked*
+complete — `og:title`, `og:description`, `og:site_name`, `og:type`, and a `twitter:card` of
+`summary_large_image` were all present. That last one is what made the omission worse than
+doing nothing: it promises a large preview image, so a share rendered as a bare text card
+rather than the compact card `summary` would have given. `metadataBase` was missing too, which
+would have broken a relative `og:image` even had one been declared.
+
+Both were fixed later, along with a description that claimed the app was "offline-friendly"
+when there is no service worker and no manifest — see the note on honest labeling in §7.
+
 ---
 
 ## 11. Phase 9 — Docs and deploy
