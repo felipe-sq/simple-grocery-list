@@ -149,7 +149,7 @@ function EditItemForm({
             id="item-notes"
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            placeholder="Mature, not mild"
+            placeholder="Sharp, not mild"
             maxLength={120}
           />
         </div>

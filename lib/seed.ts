@@ -16,7 +16,7 @@ const SEED_TIME = '2026-01-01T09:00:00.000Z';
 
 export const seedList: List = {
   id: SEED_LIST_ID,
-  name: 'Weekly Shop',
+  name: 'Weekly Groceries',
   color: '#34c759',
   sortOrder: 0,
   createdAt: SEED_TIME,
@@ -36,11 +36,11 @@ const SEED_ITEMS: SeedItem[] = [
   { name: 'Baby spinach', tag: 'Produce', quantity: 1, unit: 'bag', checked: false },
   { name: 'Roma tomatoes', tag: 'Produce', quantity: 4, unit: null, checked: true },
   { name: 'Whole milk', tag: 'Dairy', quantity: 2, unit: 'L', checked: false },
-  { name: 'Greek yoghurt', tag: 'Dairy', quantity: 1, unit: 'tub', checked: false },
-  { name: 'Cheddar', tag: 'Dairy', quantity: 250, unit: 'g', checked: true, notes: 'Mature, not mild' },
+  { name: 'Greek yogurt', tag: 'Dairy', quantity: 1, unit: 'tub', checked: false },
+  { name: 'Cheddar', tag: 'Dairy', quantity: 250, unit: 'g', checked: true, notes: 'Sharp, not mild' },
   { name: 'Olive oil', tag: 'Pantry', quantity: 1, unit: 'bottle', checked: false },
   { name: 'Penne', tag: 'Pantry', quantity: 500, unit: 'g', checked: false },
-  { name: 'Tinned tomatoes', tag: 'Pantry', quantity: 3, unit: 'tins', checked: false },
+  { name: 'Canned tomatoes', tag: 'Pantry', quantity: 3, unit: 'cans', checked: false },
   { name: 'Coffee beans', tag: 'Pantry', quantity: 1, unit: 'bag', checked: false, notes: 'Whole bean' },
 ];
 

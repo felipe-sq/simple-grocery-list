@@ -88,7 +88,7 @@ function ListForm({
             id="list-name"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Weekly Shop"
+            placeholder="Weekly Groceries"
             autoFocus
             maxLength={60}
           />
