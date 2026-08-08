@@ -78,5 +78,5 @@ used to be enforced by a Postgres unique partial index *and* a UI check; without
 
 **History.** This started as a Supabase-backed, household-shared Expo/React Native app. The
 port to a standalone web app — and the reasoning behind each decision — is written up in
-[`docs/port-plan.md`](docs/port-plan.md). The original implementation is preserved on the
+[`docs/port-record.md`](docs/port-record.md). The original implementation is preserved on the
 `archive/expo-supabase` branch and tag.

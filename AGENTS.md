@@ -14,7 +14,7 @@ It is deliberately backend-free: everything runs in the browser.
 - **State:** Zustand, persisted to `sessionStorage`
 - **Backend:** none. No database, no API, no environment variables.
 
-The full rationale, and the history of what this replaced, is in `docs/port-plan.md`.
+The full rationale, and the history of what this replaced, is in `docs/port-record.md`.
 
 ---
 
