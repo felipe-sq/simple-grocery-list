@@ -24,7 +24,7 @@ https://www.felipesq.dev. No backend, no accounts, no invite loops.
 | Sharing | None. Single-user, private. Households, members, invites, presence all deleted. |
 | Platforms | Web only. `ios/`, EAS, and every native-only dependency removed. |
 | Features | Tags + filter, swipe-to-delete, edit sheet, barcode scanning. **Voice input dropped.** |
-| Seed data | One populated sample list ("Weekly Shop"), some items checked. |
+| Seed data | One populated sample list ("Weekly Groceries"), some items checked. |
 | Design | Port the existing iOS-system palette faithfully to Tailwind tokens. |
 | Components | shadcn/ui for primitives; list UI stays bespoke. |
 | Layout | Responsive: stacked phone flow on mobile, two-pane (lists sidebar + item detail) on desktop. |
@@ -167,7 +167,7 @@ Two things I had to get right:
   the same list is rejected with an error string. It must not be re-implemented in a component.
   The rename path carries the same check, excluding the item being renamed.
 
-**Seeding:** on first hydration with no persisted state, one "Weekly Shop" list is inserted with
+**Seeding:** on first hydration with no persisted state, one "Weekly Groceries" list is inserted with
 ~10 realistic items across Produce / Dairy / Pantry tags, 2–3 already checked. A portfolio
 visitor sees a working app within the first second instead of an empty state, and grocery
 content makes the quantity, unit, and barcode features self-explanatory without any copy.
