@@ -126,7 +126,7 @@ function EditItemForm({
               id="item-unit"
               value={unit}
               onChange={(event) => setUnit(event.target.value)}
-              placeholder="L"
+              placeholder="oz"
               maxLength={16}
             />
           </div>

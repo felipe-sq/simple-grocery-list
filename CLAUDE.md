@@ -120,7 +120,10 @@ Then confirm by hand:
 1. No console errors on the happy path, including hydration warnings
 2. Works at 390px and 1280px
 3. Keyboard-only navigation reaches every action — including delete, which on touch is
-   only reachable through the edit dialog, not the swipe gesture
+   only reachable through the edit dialog, not the swipe gesture. **In Safari, use
+   Option+Tab**, or the rows look unreachable: Safari's default Tab order skips buttons
+   and visits only form controls and links, and every row control is a `<button>`. That
+   is a browser setting (macOS Keyboard navigation), not a bug to fix here
 4. A refresh keeps the lists; a new tab starts fresh
 5. Adding or renaming to a duplicate name is still blocked
 
