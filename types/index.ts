@@ -1,34 +1,34 @@
+/**
+ * Domain types for the demo. Every multi-user field from the Supabase era
+ * (household_id, created_by, checked_by, updated_at, pending_sync) is gone:
+ * there is one implicit user per browser tab, so ownership is never recorded.
+ */
+
+export type ItemSource = 'manual' | 'barcode';
+
 export type List = {
   id: string;
-  household_id: string;
   name: string;
+  /** Hex colour, or null to fall back to the primary accent. */
   color: string | null;
-  icon: string | null;
-  sort_order: number;
-  created_by: string;
-  created_at: string;
+  sortOrder: number;
+  createdAt: string;
 };
 
-export type GroceryItem = {
+export type ListItem = {
   id: string;
-  household_id: string;
-  list_id: string;
-  tag: string | null;
+  listId: string;
   name: string;
+  /** Free-text grouping label, e.g. "Produce". Null when untagged. */
+  tag: string | null;
   quantity: number | null;
   unit: string | null;
   notes: string | null;
   checked: boolean;
-  checked_at: string | null;
-  checked_by: string | null;
-  sort_order: number;
-  // 'staples' | 'suggestion' only appear on rows migrated from the old model.
-  source: 'manual' | 'staples' | 'suggestion' | 'barcode' | 'voice';
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  // Client-only: set when a mutation is queued offline.
-  pending_sync?: boolean;
+  checkedAt: string | null;
+  sortOrder: number;
+  source: ItemSource;
+  createdAt: string;
 };
 
 export type AddItemInput = {
@@ -37,33 +37,25 @@ export type AddItemInput = {
   quantity?: number | null;
   unit?: string | null;
   notes?: string | null;
-  barcode?: string | null;
-  source?: GroceryItem['source'];
+  source?: ItemSource;
 };
 
-export type BarcodePrefill = {
-  barcode: string;
-  name: string | null;
-  fromHistory: boolean;
-  offline?: boolean;
-};
-
-export type ParsedVoiceItem = {
+export type EditItemInput = {
   name: string;
-  qty: number;
+  tag: string | null;
+  quantity: number | null;
   unit: string | null;
-  rawText: string;
-  parsed: boolean; // false = couldn't extract a clean name, raw text pre-filled
+  notes: string | null;
 };
 
-export type PresencePayload = {
-  user_id: string;
-  user_name: string;
-  list_id: string | null;
+/**
+ * The demo "account". No password is stored — there is nothing to
+ * authenticate against, so keeping one would be pure liability.
+ */
+export type DemoSession = {
+  email: string;
+  displayName: string;
 };
 
-export type HouseholdMember = {
-  user_id: string;
-  name: string;
-  joined_at: string;
-};
+/** Result shape for mutations that can be rejected by the duplicate rule. */
+export type MutationResult = { error: string | null };

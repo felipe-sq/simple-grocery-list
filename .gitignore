@@ -1,27 +1,18 @@
 # dependencies
 node_modules/
-/tmp/
-*.log
+.pnp
+.pnp.*
 
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+# next.js
+/.next/
+/out/
+next-env.d.ts
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
+# production
+/build
 
 # debug
+*.log
 npm-debug.*
 yarn-debug.*
 yarn-error.*
@@ -39,7 +30,8 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
+# claude
 .claude/settings.local.json
+
+# playwright mcp output
+.playwright-mcp/

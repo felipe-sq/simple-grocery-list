@@ -1,168 +1,136 @@
-# AGENTS.md — Household Grocery List App
+# AGENTS.md — Simple Grocery List
 
-This file is read by Codex at the start of every session. Follow all instructions here throughout the session.
-
----
-
-## Project Overview
-
-A real-time collaborative grocery list app for a household of 3–4 people.
-- **Platforms:** iOS (via Expo / React Native) + Web (via Expo Web)
-- **Backend:** Supabase (Postgres + Realtime + Auth + Edge Functions + RLS)
-- **Language:** TypeScript (strict mode)
-- **Routing:** Expo Router (file-based, `app/` directory)
-
-Full spec: see `docs/prd.md`, `docs/ux-flows.md`, `docs/tasks.md`
+Read at the start of every session. These instructions override default behaviour.
 
 ---
 
-## Stack & Key Libraries
+## What this is
 
-| Layer | Library | Notes |
-|---|---|---|
-| Framework | Expo SDK (latest) + Expo Router | File-based routing; use `app/` dir |
-| UI | React Native core components | No UI kit — custom components only |
-| DB / Auth / Realtime | `@supabase/supabase-js` v2 | Use service role key only in Edge Functions |
-| Bottom sheets | `@gorhom/bottom-sheet` | For Add Item and all modal sheets |
-| Drag-to-reorder | `react-native-draggable-flatlist` | Aisles + items within aisles |
-| Offline storage | `react-native-mmkv` (native) / `idb` (web) | Offline mutation queue |
-| Network status | `@react-native-community/netinfo` | Reconnect trigger for offline flush |
-| Camera / Barcode | `expo-camera` | Barcode scanning; works on web via WebRTC |
-| Speech (iOS) | `expo-speech-recognition` | Wraps SFSpeechRecognizer |
-| Speech (Web) | `window.SpeechRecognition` | Use platform file: `speech.web.ts` |
-| Animations | `react-native-reanimated` | Required by draggable-flatlist |
+A **portfolio demo** of a grocery list app, linked from https://www.felipesq.dev.
+It is deliberately backend-free: everything runs in the browser.
+
+- **Framework:** Next.js (App Router) + React + TypeScript strict
+- **Styling:** Tailwind v4 + shadcn/ui primitives (Radix under the hood)
+- **State:** Zustand, persisted to `sessionStorage`
+- **Backend:** none. No database, no API, no environment variables.
+
+The full rationale, and the history of what this replaced, is in `docs/port-plan.md`.
 
 ---
 
-## Project Structure
+## The three rules that matter
+
+### 1. No backend. Ever.
+
+There is no server, no database, no auth provider, and no `.env`. If a feature seems to
+need one, it does not belong in this demo. Anything that must persist goes through the
+Zustand store.
+
+### 2. `sessionStorage`, not `localStorage`
+
+Data survives a refresh and dies with the tab. This is intentional and was specified
+explicitly. It also makes every browser tab an independent instance of the app, which is
+what removes the need for any tenancy model. Do not "upgrade" it to `localStorage`.
+
+Consequence: **never read `sessionStorage` during render.** The store uses
+`skipHydration`; `components/providers.tsx` rehydrates it in an effect and exposes
+`useHydrated()`. Any component that displays store data must render a skeleton until
+`useHydrated()` is true, or React throws a hydration mismatch. Use `useMounted()` for
+values that only exist client-side, such as the `next-themes` theme.
+
+### 3. The duplicate rule has exactly one enforcement point
+
+An unchecked item with the same name (case-insensitive, trimmed) may not exist twice in
+the same list. In the Supabase version this was enforced twice — a unique partial index
+plus a UI check. The index is gone with the database, so `addItem` and `editItem` in
+`lib/store.ts` are now the **only** place this is enforced. Do not re-implement the check
+in a component; call the store and surface the returned error string.
+
+---
+
+## The auth is a demo, and says so
+
+`lib/demo-auth.ts` validates that credentials *look* like credentials. Nothing is
+authenticated and **no password is ever stored** — there is nothing to authenticate
+against, so storing one would be pure liability.
+
+Every auth screen renders `<DemoAuthNotice />`. Do not remove it, and do not add copy
+that implies real security ("encrypted", "your data is safe", "securely stored"). An
+unlabelled fake login on a public site reads as either broken or deceptive.
+
+---
+
+## Structure
 
 ```
-/
-├── app/                    # Expo Router pages
-│   ├── (auth)/             # Auth screens (sign-in, sign-up)
-│   ├── (app)/              # Main app (requires auth)
-│   │   ├── _layout.tsx     # Tab bar layout (dynamic store tabs)
-│   │   ├── store/
-│   │   │   └── [storeId].tsx
-│   │   ├── suggestions.tsx
-│   │   ├── staples.tsx
-│   │   └── settings/
-│   │       └── stores.tsx
-├── components/             # Shared UI components
-├── lib/
-│   ├── supabase.ts         # Supabase client singleton
-│   ├── offlineQueue.ts     # Offline mutation queue
-│   └── rules/              # Suggestion rules engine (Edge Function source)
-├── supabase/
-│   ├── migrations/         # SQL migration files
-│   └── functions/
-│       └── suggestions/    # Edge Function (Deno)
-├── hooks/                  # Custom React hooks
-├── types/                  # Shared TypeScript types
-├── docs/                   # PRD, UX flows, task breakdown
-└── AGENTS.md               # This file
-```
-
----
-
-## Coding Standards
-
-### General
-- TypeScript strict mode — no `any`, no implicit returns on non-void functions
-- Functional components only — no class components
-- Named exports for components; default exports for Expo Router pages
-- Absolute imports via `tsconfig.json` path aliases (`@/components/...`, `@/lib/...`, etc.)
-
-### Supabase
-- Never use the Supabase service role key in client-side code — only in Edge Functions (Deno, server-side)
-- Always scope queries with `household_id` — never fetch data without this filter
-- Use RLS as the security layer, not application-level filtering alone
-- Realtime subscriptions: set up in `useEffect`, clean up on unmount with `channel.unsubscribe()`
-
-### State & Data
-- Server state via Supabase queries — do not duplicate in global state
-- Optimistic updates: apply locally first, then write to DB; revert on error
-- Offline queue: any mutation that could be made offline must go through `offlineQueue.enqueue()`
-
-### Platform splits
-- Files ending in `.ios.ts` / `.web.ts` are platform-specific — Expo auto-selects them
-- Use this pattern for: speech recognition, any Web-only API, any native-only API
-- Shared interface must be defined in the base file (e.g., `speech.ts` exports the type; platform files implement it)
-
-### Components
-- Keep components under 200 lines — split into sub-components if longer
-- Props interfaces defined at top of file, above the component
-- No inline styles — use `StyleSheet.create()` for React Native, or a `styles` object
-
----
-
-## Forbidden Actions
-
-- **Never** commit `.env` files or expose `SUPABASE_SERVICE_ROLE_KEY` in client code
-- **Never** use `any` type — find the correct type or create one in `types/`
-- **Never** delete existing migration files — always create new migrations
-- **Never** bypass RLS by using the service role key on the client
-- **Never** write to `item_history` directly from the UI — only via End Trip (T-013) or add-item flow (T-011)
-- **Never** skip the duplicate check when adding items to a grocery list or copying from staples
-
----
-
-## Database
-
-Schema is in `supabase/migrations/`. Key tables:
-- `grocery_items` — active shopping list items (per store)
-- `staple_items` — persistent household staples
-- `item_history` — purchase history; source of truth for suggestions
-- `suggestion_cache` — cached rules engine output (JSONB)
-- `household_invites` — single-use invite tokens (48hr expiry)
-
-**Duplicate rule:** a `grocery_item` with the same `name` (case-insensitive) and `store_id` as an existing unchecked item must be hard-blocked — at both the DB level (unique partial index) and UI level.
-
-```sql
--- Add this to migration for grocery_items:
-CREATE UNIQUE INDEX grocery_items_no_duplicate_unchecked
-ON grocery_items (household_id, store_id, LOWER(name))
-WHERE checked = false;
+app/
+  layout.tsx              root — metadata, fonts, providers, toaster
+  page.tsx                redirects to /lists or /sign-in once hydrated
+  (auth)/                 sign-in, sign-up, reset-password
+  (app)/
+    layout.tsx            responsive two-pane shell + route guard
+    lists/page.tsx        desktop-only "select a list" pane
+    lists/[id]/page.tsx   item view
+    settings/page.tsx
+components/
+  ui/                     shadcn primitives — regenerate, don't hand-edit
+  app/                    everything bespoke
+  providers.tsx           theme + store hydration, useHydrated, useMounted
+lib/
+  store.ts                the single source of truth
+  seed.ts                 first-load sample content
+  barcode.ts              camera + Open Food Facts
+  demo-auth.ts
+types/index.ts
 ```
 
 ---
 
-## Environment Variables
+## Coding standards
 
-Required in `.env.local` (never committed):
-```
-EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=   # Edge Functions only — never in app code
-```
-
----
-
-## Completion Criteria for Any Ticket
-
-Before marking a ticket done, verify:
-1. TypeScript compiles with no errors (`npx tsc --noEmit`)
-2. App runs on iOS simulator (`expo start --ios`) without crash
-3. App runs in web browser (`expo start --web`) without crash
-4. The specific edge cases listed in the ticket are handled
-5. No `console.error` outputs during the happy path
-6. Any new Supabase table or column has a corresponding migration file
+- TypeScript strict. **No `any`** — find the right type or add one to `types/`.
+- Functional components only. Named exports for components, default for route files.
+- Absolute imports via `@/*`.
+- Components under 200 lines; props interface at the top of the file.
+- No `set-state-in-effect`. The React Compiler lint rule enforces this and it is not
+  disabled anywhere. Reset form state by keying and remounting the form, not by an
+  effect; read external values with `useSyncExternalStore`.
+- Tailwind classes only — no inline `style` except for user-chosen values such as a
+  list's colour.
 
 ---
 
-## Reference Docs (open these when relevant)
+## Feature support must degrade by hiding
 
-- Expo Router: https://docs.expo.dev/router/introduction/
-- Expo Router dynamic routes: https://docs.expo.dev/router/advanced/dynamic-routes/
-- Expo Router tab layout: https://docs.expo.dev/router/advanced/tabs/
-- Supabase JS v2 + Expo setup: https://supabase.com/docs/guides/getting-started/tutorials/with-expo-react-native
-- Supabase RLS: https://supabase.com/docs/guides/database/postgres/row-level-security
-- Supabase Realtime: https://supabase.com/docs/guides/realtime
-- Supabase Presence: https://supabase.com/docs/guides/realtime/presence
-- Supabase Edge Functions (Deno): https://supabase.com/docs/guides/functions
-- Open Food Facts API: https://openfoodfacts.github.io/openfoodfacts-server/api/
-- expo-camera barcode: https://docs.expo.dev/versions/latest/sdk/camera/
-- expo-speech-recognition: https://docs.expo.dev/versions/latest/sdk/speech/
-- react-native-draggable-flatlist: https://github.com/computerjazz/react-native-draggable-flatlist
-- @gorhom/bottom-sheet: https://gorhom.dev/react-native-bottom-sheet/
-- Codex docs: https://docs.Codex.com/en/docs/Codex/overview
+Barcode scanning needs a camera and a secure context. `isCameraAvailable()` gates the
+Scan button; where it returns false the button is **not rendered**. A button that throws
+is worse than no button. The zxing fallback (Safari, Firefox) is dynamically imported so
+its ~200 KB decoder never loads on first paint — keep it that way.
+
+---
+
+## Before calling anything done
+
+```bash
+npm run check    # tsc --noEmit && eslint && next build
+```
+
+Then confirm by hand:
+
+1. No console errors on the happy path, including hydration warnings
+2. Works at 390px and 1280px
+3. Keyboard-only navigation reaches every action — including delete, which on touch is
+   only reachable through the edit dialog, not the swipe gesture
+4. A refresh keeps the lists; a new tab starts fresh
+5. Adding or renaming to a duplicate name is still blocked
+
+---
+
+## Forbidden
+
+- Adding a backend, database, or environment variable
+- Switching `sessionStorage` to `localStorage`
+- Using `any`
+- Removing the demo notices, or claiming the demo auth is secure
+- Skipping the duplicate check, or duplicating it outside the store
+- Committing screenshots or `.playwright-mcp/` output
