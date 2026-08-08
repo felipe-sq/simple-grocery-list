@@ -3,8 +3,10 @@
  *
  * Chrome, Edge and Android expose a native `BarcodeDetector`, which costs
  * nothing. Safari and Firefox do not, so we fall back to @zxing/browser — a
- * ~200 KB decoder that is dynamically imported only when a scan actually
- * starts, never on page load.
+ * decoder measuring 468 kB raw and 121 kB gzipped, dynamically imported only
+ * when a scan actually starts, never on page load. Those are the measured
+ * figures from docs/port-record.md §10; this comment previously estimated
+ * ~200 KB, which was less than half the real cost of getting it wrong.
  */
 
 const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] as const;
