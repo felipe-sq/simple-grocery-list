@@ -64,6 +64,28 @@ function StoreHydration({ children }: { children: ReactNode }) {
     void useStore.persist.rehydrate();
   }, []);
 
+  // iOS occasionally resumes a backgrounded home-screen app (or a bfcache
+  // restore) without repainting DOM updates that already committed while it
+  // was away — the sidebar item counts look frozen even though the
+  // underlying state is correct. Forcing a reflow on resume is the standard
+  // workaround; it's a visual nudge only, no state or storage is touched.
+  useEffect(() => {
+    function forceRepaint() {
+      if (document.visibilityState !== 'visible') return;
+      const { style } = document.documentElement;
+      style.display = 'none';
+      void document.documentElement.offsetHeight;
+      style.display = '';
+    }
+
+    document.addEventListener('visibilitychange', forceRepaint);
+    window.addEventListener('pageshow', forceRepaint);
+    return () => {
+      document.removeEventListener('visibilitychange', forceRepaint);
+      window.removeEventListener('pageshow', forceRepaint);
+    };
+  }, []);
+
   return <>{children}</>;
 }
 

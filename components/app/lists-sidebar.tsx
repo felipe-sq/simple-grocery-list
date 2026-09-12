@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Settings, ShoppingCart } from 'lucide-react';
+import { Plus, RefreshCw, Settings, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -53,6 +53,17 @@ export function ListsSidebar() {
       <header className="flex items-end justify-between gap-2 px-4 pt-6 pb-3">
         <h1 className="text-3xl font-bold tracking-tight">My Lists</h1>
         <div className="flex items-center gap-1">
+          {/* Data lives in sessionStorage and is always current — this is a
+              plain reload, not a data refetch, for when the screen has gone
+              visually stale (a known iOS quirk after backgrounding the app). */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => window.location.reload()}
+            aria-label="Refresh"
+          >
+            <RefreshCw className="size-5" />
+          </Button>
           <Button variant="ghost" size="icon" asChild>
             <Link href="/settings" aria-label="Settings">
               <Settings className="size-5" />
